@@ -32,40 +32,42 @@ function xmldb_qtype_ordering_upgrade($oldversion) {
 
     $dbman = $DB->get_manager();
 
-    if ($oldversion < 2013062800) {
+    $newversion = 2013062800;
+    if ($oldversion < $newversion) {
         $select = 'qn.*, qo.id AS questionorderingid';
         $from   = '{question} qn LEFT JOIN {question_ordering} qo ON qn.id = qo.question';
         $where  = 'qn.qtype = ? AND qo.id IS NULL';
-        $params = ['ordering'];
+        $params = array('ordering');
         if ($questions = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params)) {
             foreach ($questions as $question) {
-                if ($answers = $DB->get_records('question_answers', ['question' => $question->id])) {
+                if ($answers = $DB->get_records('question_answers', array('question' => $question->id))) {
                     // Add "options" for this ordering question.
-                    $questionordering = (object) [
+                    $questionordering = (object) array(
                         'question'   => $question->id,
                         'logical'    => 1,
                         'studentsee' => min(6, count($answers)),
                         'correctfeedback' => '',
                         'partiallycorrectfeedback' => '',
-                        'incorrectfeedback' => '',
-                    ];
+                        'incorrectfeedback' => ''
+                    );
                     $questionordering->id = $DB->insert_record('question_ordering', $questionordering);
                 } else {
                     // This is a faulty ordering question - remove it.
-                    $DB->delete_records('question', ['id' => $question->id]);
+                    $DB->delete_records('question', array('id' => $question->id));
                     if ($dbman->table_exists('quiz_question_instances')) {
-                        $DB->delete_records('quiz_question_instances', ['question' => $question->id]);
+                        $DB->delete_records('quiz_question_instances', array('question' => $question->id));
                     }
                     if ($dbman->table_exists('reader_question_instances')) {
-                        $DB->delete_records('reader_question_instances', ['question' => $question->id]);
+                        $DB->delete_records('reader_question_instances', array('question' => $question->id));
                     }
                 }
             }
         }
-        upgrade_plugin_savepoint(true, 2013062800, 'qtype', 'ordering');
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'ordering');
     }
 
-    if ($oldversion < 2015011915) {
+    $newversion = 2015011915;
+    if ($oldversion < $newversion) {
 
         // Rename "ordering" table for Moodle >= 2.5.
         $oldname = 'question_ordering';
@@ -82,10 +84,10 @@ function xmldb_qtype_ordering_upgrade($oldversion) {
 
         // Remove index on question(id) field (because we want to modify the field).
         $table = new xmldb_table('qtype_ordering_options');
-        $fields = ['question', 'questionid'];
+        $fields = array('question', 'questionid');
         foreach ($fields as $field) {
             if ($dbman->field_exists($table, $field)) {
-                $index = new xmldb_index('qtypordeopti_que_uix', XMLDB_INDEX_UNIQUE, [$field]);
+                $index = new xmldb_index('qtypordeopti_que_uix', XMLDB_INDEX_UNIQUE, array($field));
                 if ($dbman->index_exists($table, $index)) {
                     $dbman->drop_index($table, $index);
                 }
@@ -97,7 +99,7 @@ function xmldb_qtype_ordering_upgrade($oldversion) {
         // Rename "studentsee" -> "selectcount".
         // Add    "(xxx)feedbackformat" fields.
         $table = new xmldb_table('qtype_ordering_options');
-        $fields = [
+        $fields = array(
             'questionid' => new xmldb_field('question', XMLDB_TYPE_INTEGER, '11', null, XMLDB_NOTNULL, null, '0', 'id'),
             'selecttype' => new xmldb_field('logical', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '0', 'questionid'),
             'selectcount' => new xmldb_field('studentsee', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '0', 'selecttype'),
@@ -106,8 +108,8 @@ function xmldb_qtype_ordering_upgrade($oldversion) {
             'incorrectfeedbackformat' => new xmldb_field('incorrectfeedbackformat', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL,
                     null, '0', 'incorrectfeedback'),
             'partiallycorrectfeedbackformat' => new xmldb_field('partiallycorrectfeedbackformat', XMLDB_TYPE_INTEGER, '2', null,
-                    XMLDB_NOTNULL, null, '0', 'partiallycorrectfeedback'),
-        ];
+                    XMLDB_NOTNULL, null, '0', 'partiallycorrectfeedback')
+        );
         foreach ($fields as $newname => $field) {
             $oldexists = $dbman->field_exists($table, $field);
             $newexists = $dbman->field_exists($table, $newname);
@@ -133,31 +135,32 @@ function xmldb_qtype_ordering_upgrade($oldversion) {
         $from   = '{qtype_ordering_options}';
         $group  = 'questionid';
         $having = 'countduplicates > ?';
-        $params = [1];
+        $params = array(1);
         if ($records = $DB->get_records_sql("SELECT $select FROM $from GROUP BY $group HAVING $having", $params)) {
             foreach ($records as $record) {
                 $select = 'id <> ? AND questionid = ?';
-                $params = [$record->maxid, $record->questionid];
+                $params = array($record->maxid, $record->questionid);
                 $DB->delete_records_select('qtype_ordering_options', $select, $params);
             }
         }
 
         // Restore index on questionid field.
         $table = new xmldb_table('qtype_ordering_options');
-        $index = new xmldb_index('qtypordeopti_que_uix', XMLDB_INDEX_UNIQUE, ['questionid']);
+        $index = new xmldb_index('qtypordeopti_que_uix', XMLDB_INDEX_UNIQUE, array('questionid'));
         if (! $dbman->index_exists($table, $index)) {
             $dbman->add_index($table, $index);
         }
 
-        upgrade_plugin_savepoint(true, 2015011915, 'qtype', 'ordering');
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'ordering');
     }
 
-    if ($oldversion < 2015110725) {
+    $newversion = 2015110725;
+    if ($oldversion < $newversion) {
         $table = new xmldb_table('qtype_ordering_options');
-        $fields = [
+        $fields = array(
             new xmldb_field('layouttype', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, 0, 'questionid'),
-            new xmldb_field('selecttype', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, 0, 'layouttype'),
-        ];
+            new xmldb_field('selecttype', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, 0, 'layouttype')
+        );
         foreach ($fields as $field) {
             if ($dbman->field_exists($table, $field)) {
                 $dbman->change_field_type($table, $field);
@@ -165,14 +168,15 @@ function xmldb_qtype_ordering_upgrade($oldversion) {
                 $dbman->add_field($table, $field);
             }
         }
-        upgrade_plugin_savepoint(true, 2015110725, 'qtype', 'ordering');
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'ordering');
     }
 
-    if ($oldversion < 2015121734) {
+    $newversion = 2015121734;
+    if ($oldversion < $newversion) {
         $table = new xmldb_table('qtype_ordering_options');
-        $fields = [
-            new xmldb_field('gradingtype', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, 0, 'selectcount'),
-        ];
+        $fields = array(
+            new xmldb_field('gradingtype', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, 0, 'selectcount')
+        );
         foreach ($fields as $field) {
             if ($dbman->field_exists($table, $field)) {
                 $dbman->change_field_type($table, $field);
@@ -180,20 +184,21 @@ function xmldb_qtype_ordering_upgrade($oldversion) {
                 $dbman->add_field($table, $field);
                 // When adding this field to existing records,
                 // the gradingtype is set to whatever the selecttype is.
-                $DB->execute('UPDATE {qtype_ordering_options} SET gradingtype = selecttype', []);
+                $DB->execute('UPDATE {qtype_ordering_options} SET gradingtype = selecttype', array());
             }
         }
-        upgrade_plugin_savepoint(true, 2015121734, 'qtype', 'ordering');
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'ordering');
     }
 
-    if ($oldversion < 2016032949) {
+    $newversion = 2016032949;
+    if ($oldversion < $newversion) {
         if ($dbman->table_exists('reader_question_instances')) {
             $select = 'rqi.question, COUNT(*) AS countquestion';
             $from   = '{reader_question_instances} rqi '.
                       'LEFT JOIN {question} q ON rqi.question = q.id';
             $where  = 'q.qtype = ?';
             $group  = 'rqi.question';
-            $params = ['ordering'];
+            $params = array('ordering');
             if ($questions = $DB->get_records_sql("SELECT $select FROM $from WHERE $where GROUP BY $group", $params)) {
                 $questions = array_keys($questions);
                 list($select, $params) = $DB->get_in_or_equal($questions);
@@ -210,10 +215,10 @@ function xmldb_qtype_ordering_upgrade($oldversion) {
                 $DB->set_field_select($table, 'selectcount', 6, $select, $params); // Six.
             }
         }
-        upgrade_plugin_savepoint(true, 2016032949, 'qtype', 'ordering');
     }
 
-    if ($oldversion < 2016081655) {
+    $newversion = 2016081655;
+    if ($oldversion < $newversion) {
         $table = new xmldb_table('qtype_ordering_options');
         $field = new xmldb_field('showgrading', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, 1, 'gradingtype');
         if ($dbman->field_exists($table, $field)) {
@@ -221,10 +226,11 @@ function xmldb_qtype_ordering_upgrade($oldversion) {
         } else {
             $dbman->add_field($table, $field);
         }
-        upgrade_plugin_savepoint(true, 2016081655, 'qtype', 'ordering');
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'ordering');
     }
 
-    if ($oldversion < 2019071191) {
+    $newversion = 2019071191;
+    if ($oldversion < $newversion) {
 
         // Add field "numberingstyle" to table "qtype_ordering_options".
         // This field was briefly called "answernumbering".
@@ -249,32 +255,34 @@ function xmldb_qtype_ordering_upgrade($oldversion) {
         } else {
             $dbman->add_field($table, $field);
         }
-        upgrade_plugin_savepoint(true, 2019071191, 'qtype', 'ordering');
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'ordering');
     }
 
-    if ($oldversion < 2019073193) {
+    $newversion = '2019073193';
+    if ($oldversion < $newversion) {
         $table = 'qtype_ordering_options';
         $field = 'numberingstyle';
         $select = "$field = ? OR $field = ?";
-        $params = ['III', 'ABC'];
+        $params = array('III', 'ABC');
         if ($options = $DB->get_records_select($table, $select, $params, $field, "id,$field")) {
             foreach ($options as $option) {
                 switch ($option->numberingstyle) {
                     case 'ABC':
-                        $DB->set_field($table, $field, 'ABCD', ['id' => $option->id]);
+                        $DB->set_field($table, $field, 'ABCD', array('id' => $option->id));
                         break;
                     case 'III':
-                        $DB->set_field($table, $field, 'IIII', ['id' => $option->id]);
+                        $DB->set_field($table, $field, 'IIII', array('id' => $option->id));
                         break;
                     // phpcs:ignore Squiz.PHP.CommentedOutCode.Found
                     // Ignore "abc", "iii", and anything else.
                 }
             }
         }
-        upgrade_plugin_savepoint(true, 2019073193, 'qtype', 'ordering');
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'ordering');
     }
 
-    if ($oldversion < 2022092000) {
+    $newversion = '2022092000';
+    if ($oldversion < $newversion) {
         $table = new xmldb_table('qtype_ordering_options');
         $field = new xmldb_field('shownumcorrect', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, 0);
         if ($dbman->field_exists($table, $field)) {
@@ -282,7 +290,7 @@ function xmldb_qtype_ordering_upgrade($oldversion) {
         } else {
             $dbman->add_field($table, $field);
         }
-        upgrade_plugin_savepoint(true, 2022092000, 'qtype', 'ordering');
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'ordering');
     }
 
     if ($oldversion < 2023092911) {

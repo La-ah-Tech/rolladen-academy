@@ -14,82 +14,68 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qtype_ordering;
-
-use core_question_generator;
-use phpunit_util;
-use qtype_ordering;
-use qtype_ordering_test_helper;
-use qtype_ordering_edit_form;
-use qtype_ordering_question;
-use test_question_maker;
-use question_bank;
-use question_possible_response;
-use qformat_xml;
-use qformat_gift;
-use question_check_specified_fields_expectation;
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
-require_once($CFG->dirroot . '/question/type/edit_question_form.php');
-require_once($CFG->dirroot . '/question/type/ordering/questiontype.php');
-require_once($CFG->dirroot . '/question/type/ordering/edit_ordering_form.php');
-
-require_once($CFG->libdir . '/questionlib.php');
-require_once($CFG->dirroot . '/question/format.php');
-require_once($CFG->dirroot . '/question/format/gift/format.php');
-require_once($CFG->dirroot . '/question/format/xml/format.php');
-
 /**
  * Unit tests for the ordering question type class.
  *
  * @package   qtype_ordering
  * @copyright 2018 The Open University
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers    \qtype_ordering
- * @covers    \qtype_ordering_question
  */
-final class questiontype_test extends \question_testcase {
 
-    /**
-     * Define the import object to compare against.
-     *
-     * @return object The expected import object.
-     */
-    private static function expectedimport(): object {
-        return (object) [
-            'qtype' => 'ordering',
-            'idnumber' => 'myid',
-            'name' => 'Moodle',
-            'length' => 1,
-            'penalty' => 0.3333333,
-            'questiontext' => 'Put these words in order.',
-            'questiontextformat' => 1,
-            'generalfeedback' => 'The correct answer is "Modular Object Oriented Dynamic Learning Environment".',
-            'generalfeedbackformat' => 1,
-            'defaultmark' => 1,
-        ];
+namespace qtype_ordering;
+
+use qtype_ordering;
+use test_question_maker;
+use qtype_ordering_edit_form;
+use qtype_ordering_test_helper;
+use question_bank;
+use question_possible_response;
+use qtype_ordering_question;
+use core_question_generator;
+
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
+require_once($CFG->dirroot . '/question/type/ordering/questiontype.php');
+require_once($CFG->dirroot . '/question/type/edit_question_form.php');
+require_once($CFG->dirroot . '/question/type/ordering/edit_ordering_form.php');
+
+/**
+ * Unit tests for the ordering question type class.
+ *
+ * @copyright 20018 The Open University
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers    \qtype_ordering
+ */
+class questiontype_test extends \advanced_testcase {
+    /** @var qtype_ordering instance of the question type class to test. */
+    protected $qtype;
+
+    protected function setUp(): void {
+        $this->qtype = new qtype_ordering();
     }
 
-    public function test_name(): void {
-        $ordering = new qtype_ordering();
-        $this->assertEquals('ordering', $ordering->name());
+    protected function tearDown(): void {
+        $this->qtype = null;
     }
 
-    public function test_can_analyse_responses(): void {
-        $ordering = new qtype_ordering();
-        $this->assertTrue($ordering->can_analyse_responses());
+    public function test_name() {
+        $this->assertEquals($this->qtype->name(), 'ordering');
     }
 
-    public function test_question_saving(): void {
+    public function test_can_analyse_responses() {
+        $this->assertTrue($this->qtype->can_analyse_responses());
+    }
+
+    public function test_question_saving() {
         $this->resetAfterTest();
         $this->setAdminUser();
 
         $questiondata = test_question_maker::get_question_data('ordering');
         $formdata = test_question_maker::get_question_form_data('ordering');
 
+        /** @var core_question_generator $generator */
         $generator = $this->getDataGenerator()->get_plugin_generator('core_question');
         $cat = $generator->create_question_category([]);
 
@@ -101,13 +87,12 @@ final class questiontype_test extends \question_testcase {
         $this->assertTrue($form->is_validated());
 
         $fromform = $form->get_data();
-        $ordering = new qtype_ordering();
 
-        $returnedfromsave = $ordering->save_question($questiondata, $fromform);
+        $returnedfromsave = $this->qtype->save_question($questiondata, $fromform);
         $actualquestiondata = question_bank::load_question_data($returnedfromsave->id);
 
         foreach ($questiondata as $property => $value) {
-            if (!in_array($property, ['id', 'version', 'timemodified', 'timecreated', 'options', 'stamp'])) {
+            if (!in_array($property, array('id', 'version', 'timemodified', 'timecreated', 'options', 'stamp'))) {
                 $this->assertContainsEquals($value, (array)$actualquestiondata);
                 $this->assertContainsEquals($property, array_keys((array)$actualquestiondata));
             }
@@ -134,103 +119,100 @@ final class questiontype_test extends \question_testcase {
         }
     }
 
-    public function test_get_possible_responses(): void {
+    public function test_get_possible_responses() {
         $questiondata = test_question_maker::get_question_data('ordering');
-        $ordering = new qtype_ordering();
-        $possibleresponses = $ordering->get_possible_responses($questiondata);
-        $expectedresponseclasses = [
-            'Modular' => [
+        $possibleresponses = $this->qtype->get_possible_responses($questiondata);
+        $expectedresponseclasses = array(
+            'Modular' => array(
                     1 => new question_possible_response('Position 1', 0.1666667),
                     2 => new question_possible_response('Position 2', 0),
                     3 => new question_possible_response('Position 3', 0),
                     4 => new question_possible_response('Position 4', 0),
                     5 => new question_possible_response('Position 5', 0),
                     6 => new question_possible_response('Position 6', 0),
-            ],
-            'Object' => [
+            ),
+            'Object' => array(
                     1 => new question_possible_response('Position 1', 0),
                     2 => new question_possible_response('Position 2', 0.1666667),
                     3 => new question_possible_response('Position 3', 0),
                     4 => new question_possible_response('Position 4', 0),
                     5 => new question_possible_response('Position 5', 0),
                     6 => new question_possible_response('Position 6', 0),
-            ],
-            'Oriented' => [
+            ),
+            'Oriented' => array(
                     1 => new question_possible_response('Position 1', 0),
                     2 => new question_possible_response('Position 2', 0),
                     3 => new question_possible_response('Position 3', 0.1666667),
                     4 => new question_possible_response('Position 4', 0),
                     5 => new question_possible_response('Position 5', 0),
                     6 => new question_possible_response('Position 6', 0),
-            ],
-            'Dynamic' => [
+            ),
+            'Dynamic' => array(
                     1 => new question_possible_response('Position 1', 0),
                     2 => new question_possible_response('Position 2', 0),
                     3 => new question_possible_response('Position 3', 0),
                     4 => new question_possible_response('Position 4', 0.1666667),
                     5 => new question_possible_response('Position 5', 0),
                     6 => new question_possible_response('Position 6', 0),
-            ],
-            'Learning' => [
+            ),
+            'Learning' => array(
                     1 => new question_possible_response('Position 1', 0),
                     2 => new question_possible_response('Position 2', 0),
                     3 => new question_possible_response('Position 3', 0),
                     4 => new question_possible_response('Position 4', 0),
                     5 => new question_possible_response('Position 5', 0.1666667),
                     6 => new question_possible_response('Position 6', 0),
-            ],
-            'Environment' => [
+            ),
+            'Environment' => array(
                     1 => new question_possible_response('Position 1', 0),
                     2 => new question_possible_response('Position 2', 0),
                     3 => new question_possible_response('Position 3', 0),
                     4 => new question_possible_response('Position 4', 0),
                     5 => new question_possible_response('Position 5', 0),
                     6 => new question_possible_response('Position 6', 0.1666667),
-            ],
-        ];
-        $this->assertEqualsWithDelta($expectedresponseclasses, $possibleresponses, 0.0000005);
+            ),
+        );
+        $this->assertEqualsWithDelta($expectedresponseclasses, $possibleresponses, 0.0000005, '');
     }
 
-    public function test_get_possible_responses_very_long(): void {
+    public function test_get_possible_responses_very_long() {
         $questiondata = test_question_maker::get_question_data('ordering');
-        $ordering = new qtype_ordering();
         $onehundredchars = str_repeat('1234567890', 9) . '123456789碁';
         // Set one of the answers to over 100 chars, with a multi-byte UTF-8 character at position 100.
         $questiondata->options->answers[13]->answer = $onehundredchars . 'and some more';
-        $possibleresponses = $ordering->get_possible_responses($questiondata);
+        $possibleresponses = $this->qtype->get_possible_responses($questiondata);
         $this->assertArrayHasKey($onehundredchars, $possibleresponses);
     }
 
-    public function test_get_numberingstyle(): void {
+    public function test_get_numberingstyle() {
         $questiondata = test_question_maker::get_question_data('ordering');
-        $ordering = new qtype_ordering();
         $expected = qtype_ordering_question::NUMBERING_STYLE_DEFAULT;
-        $actual = $ordering->get_numberingstyle($questiondata);
+        $actual = $this->qtype->get_numberingstyle($questiondata);
         $this->assertEquals($expected, $actual);
 
         $questiondata->options->numberingstyle = 'abc';
         $expected = 'abc';
-        $actual = $ordering->get_numberingstyle($questiondata);
+        $actual = $this->qtype->get_numberingstyle($questiondata);
         $this->assertEquals($expected, $actual);
 
         $questiondata->options->numberingstyle = 'ABCD';
         $expected = 'ABCD';
-        $actual = $ordering->get_numberingstyle($questiondata);
+        $actual = $this->qtype->get_numberingstyle($questiondata);
         $this->assertEquals($expected, $actual);
 
         $questiondata->options->numberingstyle = '123';
         $expected = '123';
-        $actual = $ordering->get_numberingstyle($questiondata);
+        $actual = $this->qtype->get_numberingstyle($questiondata);
         $this->assertEquals($expected, $actual);
 
         $questiondata->options->numberingstyle = 'iii';
         $expected = 'iii';
-        $actual = $ordering->get_numberingstyle($questiondata);
+        $actual = $this->qtype->get_numberingstyle($questiondata);
         $this->assertEquals($expected, $actual);
 
         $questiondata->options->numberingstyle = 'III';
         $expected = 'III';
-        $actual = $ordering->get_numberingstyle($questiondata);
+        $actual = $this->qtype->get_numberingstyle($questiondata);
         $this->assertEquals($expected, $actual);
     }
 

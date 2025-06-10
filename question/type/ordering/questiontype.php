@@ -14,12 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * The questiontype class for the multiple choice question type.
+ *
+ * @package    qtype_ordering
+ * @copyright  2013 Gordon Bateson (gordon.bateson@gmail.com)
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 use qtype_ordering\question_hint_ordering;
 
 /**
  * The ordering question type.
  *
- * @package    qtype_ordering
  * @copyright  2013 Gordon Bateson (gordon.bateson@gmail.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -28,55 +35,69 @@ class qtype_ordering extends question_type {
     /** @var int Number of hints default. */
     const DEFAULT_NUM_HINTS = 2;
 
+    /** @var array Combined feedback fields */
+    public $feedbackfields = array('correctfeedback', 'partiallycorrectfeedback', 'incorrectfeedback');
+
     /**
-     * Determine if the question type can have HTML answers.
-     *
-     * @return bool
-     * @codeCoverageIgnore
+     * @return bool whether the question_answers.answer field needs to have
+     * restore_decode_content_links_worker called on it.
      */
-    public function has_html_answers(): bool {
+    public function has_html_answers() {
         return true;
     }
 
-    public function extra_question_fields(): array {
-        return [
-            'qtype_ordering_options',
-            'layouttype', 'selecttype', 'selectcount',
-            'gradingtype', 'showgrading', 'numberingstyle',
-        ];
+    /**
+     * If your question type has a table that extends the question table, and
+     * you want the base class to automatically save, backup and restore the extra fields,
+     * override this method to return an array wherer the first element is the table name,
+     * and the subsequent entries are the column names (apart from id and questionid).
+     *
+     * @return mixed array as above, or null to tell the base class to do nothing.
+     */
+    public function extra_question_fields() {
+        return array('qtype_ordering_options',
+                     'layouttype', 'selecttype', 'selectcount',
+                     'gradingtype', 'showgrading', 'numberingstyle');
     }
 
-    protected function initialise_question_instance(question_definition $question, $questiondata): void {
+    /**
+     * Initialise the common question_definition fields.
+     * @param question_definition $question the question_definition we are creating.
+     * @param object $questiondata the question data loaded from the database.
+     */
+    protected function initialise_question_instance(question_definition $question, $questiondata) {
         global $CFG;
 
         parent::initialise_question_instance($question, $questiondata);
 
         $question->answers = $questiondata->options->answers;
         foreach ($question->answers as $answerid => $answer) {
-            $question->answers[$answerid]->md5key = 'ordering_item_' . md5(($CFG->passwordsaltmain ?? '') . $answer->answer);
+            $question->answers[$answerid]->md5key =
+                    'ordering_item_' . md5(($CFG->passwordsaltmain ?? '') . $answer->answer);
         }
+
+        $question->options = clone($questiondata->options);
+        unset($question->options->answers);
 
         $this->initialise_combined_feedback($question, $questiondata, true);
     }
 
-    public function save_defaults_for_new_questions(stdClass $fromform): void {
-        parent::save_defaults_for_new_questions($fromform);
-        $this->set_default_value('layouttype', $fromform->layouttype);
-        $this->set_default_value('selecttype', $fromform->selecttype);
-        $this->set_default_value('selectcount', $fromform->selectcount);
-        $this->set_default_value('gradingtype', $fromform->gradingtype);
-        $this->set_default_value('showgrading', $fromform->showgrading);
-        $this->set_default_value('numberingstyle', $fromform->numberingstyle);
-    }
-
-    public function save_question_options($question): bool|stdClass {
+    /**
+     * Saves question-type specific options
+     *
+     * This is called by {@link save_question()} to save the question-type specific data
+     * @return object $result->error or $result->notice
+     * @param object $question  This holds the information from the editing form,
+     *      it is not a standard question object.
+     */
+    public function save_question_options($question) {
         global $DB;
 
         $result = new stdClass();
         $context = $question->context;
 
         // Remove empty answers.
-        $question->answer = array_filter($question->answer, [$this, 'is_not_blank']);
+        $question->answer = array_filter($question->answer, array($this, 'is_not_blank'));
         $question->answer = array_values($question->answer); // Make keys sequential.
 
         // Count how many answers we have.
@@ -98,10 +119,10 @@ class qtype_ordering extends question_type {
 
         $question->feedback = range(1, $countanswers);
 
-        if ($answerids = $DB->get_records('question_answers', ['question' => $question->id], 'id ASC', 'id,question')) {
+        if ($answerids = $DB->get_records('question_answers', array('question' => $question->id), 'id ASC', 'id,question')) {
             $answerids = array_keys($answerids);
         } else {
-            $answerids = [];
+            $answerids = array();
         }
 
         // Insert all the new answers.
@@ -142,24 +163,24 @@ class qtype_ordering extends question_type {
             $answertext = preg_replace($imgsearch, $imgreplace, $answertext);
 
             // Prepare the $answer object.
-            $answer = (object) [
-                'question' => $question->id,
-                'fraction' => ($i + 1), // Start at 1.
-                'answer' => $answertext,
-                'answerformat' => $answerformat,
-                'feedback' => '',
+            $answer = (object)array(
+                'question'       => $question->id,
+                'fraction'       => ($i + 1), // Start at 1.
+                'answer'         => $answertext,
+                'answerformat'   => $answerformat,
+                'feedback'       => '',
                 'feedbackformat' => FORMAT_MOODLE,
-            ];
+            );
 
             // Add/insert $answer into the database.
             if ($answer->id = array_shift($answerids)) {
-                if (!$DB->update_record('question_answers', $answer)) {
+                if (! $DB->update_record('question_answers', $answer)) {
                     $result->error = get_string('cannotupdaterecord', 'error', 'question_answers (id='.$answer->id.')');
                     return $result;
                 }
             } else {
                 unset($answer->id);
-                if (!$answer->id = $DB->insert_record('question_answers', $answer)) {
+                if (! $answer->id = $DB->insert_record('question_answers', $answer)) {
                     $result->error = get_string('cannotinsertrecord', 'error', 'question_answers');
                     return $result;
                 }
@@ -170,32 +191,32 @@ class qtype_ordering extends question_type {
             // because the answer id is used as the file's "itemid".
             if ($answeritemid) {
                 $answertext = file_save_draft_area_files($answeritemid, $context->id, 'question', 'answer', $answer->id,
-                    $this->fileoptions, $answertext);
-                $DB->set_field('question_answers', 'answer', $answertext, ['id' => $answer->id]);
+                        $this->fileoptions, $answertext);
+                $DB->set_field('question_answers', 'answer', $answertext, array('id' => $answer->id));
             }
         }
         // Create $options for this ordering question.
-        $options = (object) [
+        $options = (object)array(
             'questionid' => $question->id,
             'layouttype' => $question->layouttype,
             'selecttype' => $question->selecttype,
             'selectcount' => $question->selectcount,
             'gradingtype' => $question->gradingtype,
             'showgrading' => $question->showgrading,
-            'numberingstyle' => $question->numberingstyle,
-        ];
+            'numberingstyle' => $question->numberingstyle
+        );
         $options = $this->save_combined_feedback_helper($options, $question, $context, true);
         $this->save_hints($question, true);
 
         // Add/update $options for this ordering question.
-        if ($options->id = $DB->get_field('qtype_ordering_options', 'id', ['questionid' => $question->id])) {
-            if (!$DB->update_record('qtype_ordering_options', $options)) {
+        if ($options->id = $DB->get_field('qtype_ordering_options', 'id', array('questionid' => $question->id))) {
+            if (! $DB->update_record('qtype_ordering_options', $options)) {
                 $result->error = get_string('cannotupdaterecord', 'error', 'qtype_ordering_options (id='.$options->id.')');
                 return $result;
             }
         } else {
             unset($options->id);
-            if (!$options->id = $DB->insert_record('qtype_ordering_options', $options)) {
+            if (! $options->id = $DB->insert_record('qtype_ordering_options', $options)) {
                 $result->error = get_string('cannotinsertrecord', 'error', 'qtype_ordering_options');
                 return $result;
             }
@@ -206,14 +227,21 @@ class qtype_ordering extends question_type {
             $fs = get_file_storage();
             foreach ($answerids as $answerid) {
                 $fs->delete_area_files($context->id, 'question', 'answer', $answerid);
-                $DB->delete_records('question_answers', ['id' => $answerid]);
+                $DB->delete_records('question_answers', array('id' => $answerid));
             }
         }
 
         return true;
     }
 
-    protected function count_hints_on_form($formdata, $withparts): int {
+    /**
+     * Count number of hints on the form.
+     *
+     * @param object $formdata The data from the form.
+     * @param bool $withparts Whether to take into account clearwrong and shownumcorrect options.
+     * @return int Count of hints on the form.
+     */
+    protected function count_hints_on_form($formdata, $withparts) {
         $numhints = parent::count_hints_on_form($formdata, $withparts);
 
         if (!empty($formdata->hintoptions)) {
@@ -223,31 +251,81 @@ class qtype_ordering extends question_type {
         return $numhints;
     }
 
-    protected function is_hint_empty_in_form_data($formdata, $number, $withparts): bool {
+    /**
+     * Determine if the hint with specified number is not empty and should be saved.
+     * Overload if you use custom hint controls.
+     *
+     * @param object $formdata the data from the form.
+     * @param int $number number of hint under question.
+     * @param bool $withparts whether to take into account clearwrong and shownumcorrect options.
+     * @return bool is this particular hint data empty.
+     */
+    protected function is_hint_empty_in_form_data($formdata, $number, $withparts) {
         return parent::is_hint_empty_in_form_data($formdata, $number, $withparts) &&
             empty($formdata->hintoptions[$number]);
     }
 
-    protected function save_hint_options($formdata, $number, $withparts): bool {
+    /**
+     * Save additional question type data into the hint optional field.
+     * Overload if you use custom hint information.
+     * @param object $formdata the data from the form.
+     * @param int $number number of hint to get options from.
+     * @param bool $withparts whether question have parts.
+     * @return string value to save into the options field of question_hints table.
+     */
+    protected function save_hint_options($formdata, $number, $withparts) {
         return !empty($formdata->hintoptions[$number]);
     }
 
-    protected function make_hint($hint): question_hint_ordering {
+    /**
+     * Create a question_hint, or an appropriate subclass for this question, from a row loaded from the database.
+     *
+     * @param object $hint The DB row from the question hints table.
+     * @return question_hint_ordering Hints of question from record.
+     */
+    protected function make_hint($hint) {
         return question_hint_ordering::load_from_record($hint);
     }
 
-    public function get_possible_responses($questiondata): array {
-        $responseclasses = [];
+    /**
+     * This method should return all the possible types of response that are
+     * recognised for this question.
+     *
+     * The question is modelled as comprising one or more subparts. For each
+     * subpart, there are one or more classes that that students response
+     * might fall into, each of those classes earning a certain score.
+     *
+     * For example, in a shortanswer question, there is only one subpart, the
+     * text entry field. The response the student gave will be classified according
+     * to which of the possible $question->options->answers it matches.
+     *
+     * For the matching question type, there will be one subpart for each
+     * question stem, and for each stem, each of the possible choices is a class
+     * of student's response.
+     *
+     * A response is an object with two fields, ->responseclass is a string
+     * presentation of that response, and ->fraction, the credit for a response
+     * in that class.
+     *
+     * Array keys have no specific meaning, but must be unique, and must be
+     * the same if this function is called repeatedly.
+     *
+     * @param object $questiondata the question definition data.
+     * @return array keys are subquestionid, values are arrays of possible
+     *      responses to that subquestion.
+     */
+    public function get_possible_responses($questiondata) {
+        $responseclasses = array();
         $itemcount = count($questiondata->options->answers);
 
         $position = 0;
-        foreach ($questiondata->options->answers as $answer) {
+        foreach ($questiondata->options->answers as $answerid => $answer) {
             $position += 1;
-            $classes = [];
+            $classes = array();
             for ($i = 1; $i <= $itemcount; $i++) {
                 $classes[$i] = new question_possible_response(
-                    get_string('positionx', 'qtype_ordering', $i),
-                    ($i === $position) / $itemcount);
+                        get_string('positionx', 'qtype_ordering', $i),
+                        ($i === $position) / $itemcount);
             }
 
             $subqid = question_utils::to_plain_text($answer->answer, $answer->answerformat);
@@ -264,7 +342,7 @@ class qtype_ordering extends question_type {
      * @param mixed $value
      * @return bool If true, this item should be saved.
      */
-    public function is_not_blank(mixed $value): bool {
+    public function is_not_blank($value) {
         if (is_array($value)) {
             $value = $value['text'];
         }
@@ -272,11 +350,23 @@ class qtype_ordering extends question_type {
         return ($value || $value === '0');
     }
 
-    public function get_question_options($question): bool {
+    /**
+     * Loads the question type specific options for the question.
+     *
+     * This function loads any question type specific options for the
+     * question from the database into the question object. This information
+     * is placed in the $question->options field. A question type is
+     * free, however, to decide on a internal structure of the options field.
+     * @return bool            Indicates success or failure.
+     * @param object $question The question object for the question. This object
+     *                         should be updated to include the question type
+     *                         specific information (it is passed by reference).
+     */
+    public function get_question_options($question) {
         global $DB, $OUTPUT;
 
         // Load the options.
-        if (!$question->options = $DB->get_record('qtype_ordering_options', ['questionid' => $question->id])) {
+        if (!$question->options = $DB->get_record('qtype_ordering_options', array('questionid' => $question->id))) {
             echo $OUTPUT->notification('Error: Missing question options!');
             return false;
         }
@@ -284,7 +374,7 @@ class qtype_ordering extends question_type {
         // Load the answers - "fraction" is used to signify the order of the answers,
         // with id as a tie-break which should not be required.
         if (!$question->options->answers = $DB->get_records('question_answers',
-                ['question' => $question->id], 'fraction, id')) {
+                array('question' => $question->id), 'fraction, id')) {
             echo $OUTPUT->notification('Error: Missing question answers for ordering question ' . $question->id . '!');
             return false;
         }
@@ -293,9 +383,15 @@ class qtype_ordering extends question_type {
         return true;
     }
 
-    public function delete_question($questionid, $contextid): void {
+    /**
+     * Deletes the question-type specific data when a question is deleted.
+     *
+     * @param int $questionid The id of question being deleted.
+     * @param int $contextid the context this quesiotn belongs to.
+     */
+    public function delete_question($questionid, $contextid) {
         global $DB;
-        $DB->delete_records('qtype_ordering_options', ['questionid' => $questionid]);
+        $DB->delete_records('qtype_ordering_options', array('questionid' => $questionid));
         parent::delete_question($questionid, $contextid);
     }
 
@@ -303,42 +399,43 @@ class qtype_ordering extends question_type {
      * Import question from GIFT format
      *
      * @param array $lines
-     * @param stdClass|null $question
+     * @param object $question
      * @param qformat_gift $format
-     * @param string|null $extra (optional, default=null)
-     * @return stdClass|bool Question instance
+     * @param string $extra (optional, default=null)
+     * @return object Question instance
      */
     public function import_from_gift(array $lines, ?stdClass $question, qformat_gift $format, ?string $extra = null): bool|stdClass {
         global $CFG;
         require_once($CFG->dirroot.'/question/type/ordering/question.php');
 
         // Extract question info from GIFT file $lines.
+        $questionname = '[^{]*';
         $selectcount = '\d+';
         $selecttype  = '(?:ALL|EXACT|'.
-            'RANDOM|REL|'.
-            'CONTIGUOUS|CONTIG)?';
+                          'RANDOM|REL|'.
+                          'CONTIGUOUS|CONTIG)?';
         $layouttype  = '(?:HORIZONTAL|HORI|H|1|'.
-            'VERTICAL|VERT|V|0)?';
+                          'VERTICAL|VERT|V|0)?';
         $gradingtype = '(?:ALL_OR_NOTHING|'.
-            'ABSOLUTE_POSITION|'.
-            'ABSOLUTE|ABS|'.
-            'RELATIVE_NEXT_EXCLUDE_LAST|'.
-            'RELATIVE_NEXT_INCLUDE_LAST|'.
-            'RELATIVE_ONE_PREVIOUS_AND_NEXT|'.
-            'RELATIVE_ALL_PREVIOUS_AND_NEXT|'.
-            'RELATIVE_TO_CORRECT|'.
-            'RELATIVE|REL'.
-            'LONGEST_ORDERED_SUBSET|'.
-            'LONGEST_CONTIGUOUS_SUBSET)?';
+                          'ABSOLUTE_POSITION|'.
+                          'ABSOLUTE|ABS|'.
+                          'RELATIVE_NEXT_EXCLUDE_LAST|'.
+                          'RELATIVE_NEXT_INCLUDE_LAST|'.
+                          'RELATIVE_ONE_PREVIOUS_AND_NEXT|'.
+                          'RELATIVE_ALL_PREVIOUS_AND_NEXT|'.
+                          'RELATIVE_TO_CORRECT|'.
+                          'RELATIVE|REL'.
+                          'LONGEST_ORDERED_SUBSET|'.
+                          'LONGEST_CONTIGUOUS_SUBSET)?';
         $showgrading = '(?:SHOW|TRUE|YES|1|HIDE|FALSE|NO|0)?';
         $numberingstyle = '(?:none|123|abc|ABCD|iii|IIII)?';
         $search = '/^\s*>\s*('.$selectcount.')\s*'.
-            '('.$selecttype.')\s*'.
-            '('.$layouttype.')\s*'.
-            '('.$gradingtype.')\s*'.
-            '('.$showgrading.')\s*'.
-            '('.$numberingstyle.')\s*'.
-            '(.*?)\s*$/s';
+                           '('.$selecttype.')\s*'.
+                           '('.$layouttype.')\s*'.
+                           '('.$gradingtype.')\s*'.
+                           '('.$showgrading.')\s*'.
+                           '('.$numberingstyle.')\s*'.
+                           '(.*?)\s*$/s';
         // Item $1 the number of items to be shown.
         // Item $2 the extraction/grading type.
         // Item $3 the layout type.
@@ -346,10 +443,10 @@ class qtype_ordering extends question_type {
         // Item $5 show the grading details (SHOW/HIDE).
         // Item $6 the numbering style (none/123/abc/...).
         // Item $7 the lines of items to be ordered.
-        if (!$extra) {
+        if (! $extra) {
             return false; // Format not recognized.
         }
-        if (!preg_match($search, $extra, $matches)) {
+        if (! preg_match($search, $extra, $matches)) {
             return false; // Format not recognized.
         }
 
@@ -372,7 +469,7 @@ class qtype_ordering extends question_type {
 
             // Extract name.
             $name = false;
-            if (str_starts_with($text, '::')) {
+            if (substr($text, 0, 2) == '::') {
                 $text = substr($text, 2);
                 $pos = strpos($text, '::');
                 if (is_numeric($pos)) {
@@ -384,7 +481,7 @@ class qtype_ordering extends question_type {
 
             // Extract question text format.
             $format = FORMAT_MOODLE;
-            if (str_starts_with($text, '[')) {
+            if (substr($text, 0, 1) == '[') {
                 $text = substr($text, 1);
                 $pos = strpos($text, ']');
                 if (is_numeric($pos)) {
@@ -418,25 +515,24 @@ class qtype_ordering extends question_type {
         $question->qtype = 'ordering';
 
         // Set "selectcount" field from $selectcount.
-        if (is_numeric($selectcount) && $selectcount >= qtype_ordering_question::MIN_SUBSET_ITEMS &&
-                $selectcount <= count($answers)) {
+        if (is_numeric($selectcount) && $selectcount > 2 && $selectcount <= count($answers)) {
             $selectcount = intval($selectcount);
         } else {
             $selectcount = min(6, count($answers));
         }
         $this->set_options_for_import($question, $layouttype, $selecttype, $selectcount,
-            $gradingtype, $showgrading, $numberingstyle);
+                                        $gradingtype, $showgrading, $numberingstyle);
 
         // Remove blank items.
         $answers = array_map('trim', $answers);
         $answers = array_filter($answers); // Remove blanks.
 
         // Set up answer arrays.
-        $question->answer = [];
-        $question->answerformat = [];
-        $question->fraction = [];
-        $question->feedback = [];
-        $question->feedbackformat = [];
+        $question->answer = array();
+        $question->answerformat = array();
+        $question->fraction = array();
+        $question->feedback = array();
+        $question->feedbackformat = array();
 
         // Note that "fraction" field is used to denote sort order
         // "fraction" fields will be set to correct values later
@@ -450,17 +546,33 @@ class qtype_ordering extends question_type {
             $question->feedbackformat[$i] = FORMAT_MOODLE;
         }
 
+        // Check that the required feedback fields exist.
+        $this->check_ordering_combined_feedback($question);
+
         return $question;
+    }
+
+    /**
+     * Check that the required feedback fields exist
+     *
+     * @param object $question
+     */
+    protected function check_ordering_combined_feedback(&$question) {
+        foreach ($this->feedbackfields as $field) {
+            if (empty($question->$field)) {
+                $question->$field = array('text' => '', 'format' => FORMAT_MOODLE, 'itemid' => 0, 'files' => null);
+            }
+        }
     }
 
     /**
      * Given question object, returns array with array layouttype, selecttype, selectcount, gradingtype, showgrading
      * where layouttype, selecttype, gradingtype and showgrading are string representations.
      *
-     * @param stdClass $question
+     * @param object $question
      * @return array(layouttype, selecttype, selectcount, gradingtype, $showgrading, $numberingstyle)
      */
-    public function extract_options_for_export(stdClass $question): array {
+    public function extract_options_for_export($question) {
 
         $layouttype = match (intval($question->options->layouttype)) {
             qtype_ordering_question::LAYOUT_VERTICAL => 'VERTICAL',
@@ -503,15 +615,15 @@ class qtype_ordering extends question_type {
         // Note: this used to be (selectcount + 2).
         $selectcount = $question->options->selectcount;
 
-        return [$layouttype, $selecttype, $selectcount, $gradingtype, $showgrading, $numberingstyle];
+        return array($layouttype, $selecttype, $selectcount, $gradingtype, $showgrading, $numberingstyle);
     }
 
     /**
      * Exports question to GIFT format
      *
-     * @param stdClass $question
+     * @param object $question
      * @param qformat_gift $format
-     * @param string|null $extra (optional, default=null)
+     * @param string $extra (optional, default=null)
      * @return string GIFT representation of question
      */
     public function export_to_gift(stdClass $question, qformat_gift $format, ?string $extra = null): string {
@@ -524,18 +636,25 @@ class qtype_ordering extends question_type {
             $output .= '::'.$question->name.'::';
         }
 
-        $output .= match ($question->questiontextformat) {
-            FORMAT_HTML => '[html]',
-            FORMAT_PLAIN => '[plain]',
-            FORMAT_MARKDOWN => '[markdown]',
-            FORMAT_MOODLE => '[moodle]',
-            default => '',
-        };
+        switch ($question->questiontextformat) {
+            case FORMAT_HTML:
+                $output .= '[html]';
+                break;
+            case FORMAT_PLAIN:
+                $output .= '[plain]';
+                break;
+            case FORMAT_MARKDOWN:
+                $output .= '[markdown]';
+                break;
+            case FORMAT_MOODLE:
+                $output .= '[moodle]';
+                break;
+        }
 
         $output .= $question->questiontext.'{';
 
         list($layouttype, $selecttype, $selectcount, $gradingtype, $showgrading, $numberingstyle) =
-            $this->extract_options_for_export($question);
+                $this->extract_options_for_export($question);
         $output .= ">$selectcount $selecttype $layouttype $gradingtype $showgrading $numberingstyle".PHP_EOL;
 
         foreach ($question->options->answers as $answer) {
@@ -546,12 +665,20 @@ class qtype_ordering extends question_type {
         return $output;
     }
 
-    public function export_to_xml($question, qformat_xml $format, $extra = null): string {
+    /**
+     * Exports question to XML format
+     *
+     * @param object $question
+     * @param qformat_xml $format
+     * @param string $extra (optional, default=null)
+     * @return string XML representation of question
+     */
+    public function export_to_xml($question, qformat_xml $format, $extra=null) {
         global $CFG;
         require_once($CFG->dirroot.'/question/type/ordering/question.php');
 
         list($layouttype, $selecttype, $selectcount, $gradingtype, $showgrading, $numberingstyle) =
-            $this->extract_options_for_export($question);
+                $this->extract_options_for_export($question);
 
         $output = '';
         $output .= "    <layouttype>$layouttype</layouttype>\n";
@@ -571,7 +698,7 @@ class qtype_ordering extends question_type {
         foreach ($question->options->answers as $answer) {
             $output .= '    <answer fraction="'.$answer->fraction.'" '.$format->format($answer->answerformat).">\n";
             $output .= $format->writetext($answer->answer, 3);
-            if (trim($answer->feedback)) { // Usually there is no feedback.
+            if ($feedback = trim($answer->feedback)) { // Usually there is no feedback.
                 $output .= '      <feedback '.$format->format($answer->feedbackformat).">\n";
                 $output .= $format->writetext($answer->feedback, 4);
                 $output .= $format->write_files($answer->feedbackfiles);
@@ -583,11 +710,23 @@ class qtype_ordering extends question_type {
         return $output;
     }
 
-    public function import_from_xml($data, $question, qformat_xml $format, $extra = null): object|bool {
+    /**
+     * Imports question from the Moodle XML format
+     *
+     * Imports question using information from extra_question_fields function
+     * If some of you fields contains id's you'll need to reimplement this
+     *
+     * @param array $data
+     * @param qtype_ordering $question (or null)
+     * @param qformat_xml $format
+     * @param string $extra (optional, default=null)
+     * @return object New question object
+     */
+    public function import_from_xml($data, $question, qformat_xml $format, $extra=null) {
         global $CFG;
         require_once($CFG->dirroot.'/question/type/ordering/question.php');
 
-        $questiontype = $format->getpath($data, ['@', 'type'], '');
+        $questiontype = $format->getpath($data, array('@', 'type'), '');
 
         if ($questiontype != 'ordering') {
             return false;
@@ -595,6 +734,9 @@ class qtype_ordering extends question_type {
 
         $newquestion = $format->import_headers($data);
         $newquestion->qtype = $questiontype;
+
+        // Fix empty or long question name.
+        $newquestion->name = $this->fix_questionname($newquestion->name, $newquestion->questiontext);
 
         // Extra fields - "selecttype" and "selectcount"
         // (these fields used to be called "logical" and "studentsee").
@@ -605,23 +747,23 @@ class qtype_ordering extends question_type {
             $selecttype = 'logical';
             $selectcount = 'studentsee';
         }
-        $layouttype = $format->getpath($data, ['#', 'layouttype', 0, '#'], 'VERTICAL');
-        $selecttype = $format->getpath($data, ['#', $selecttype, 0, '#'], 'RANDOM');
-        $selectcount = $format->getpath($data, ['#', $selectcount, 0, '#'], 6);
-        $gradingtype = $format->getpath($data, ['#', 'gradingtype', 0, '#'], 'RELATIVE');
-        $showgrading = $format->getpath($data, ['#', 'showgrading', 0, '#'], '1');
-        $numberingstyle = $format->getpath($data, ['#', 'numberingstyle', 0, '#'], '1');
+        $layouttype = $format->getpath($data, array('#', 'layouttype', 0, '#'), 'VERTICAL');
+        $selecttype = $format->getpath($data, array('#', $selecttype, 0, '#'), 'RANDOM');
+        $selectcount = $format->getpath($data, array('#', $selectcount, 0, '#'), 6);
+        $gradingtype = $format->getpath($data, array('#', 'gradingtype', 0, '#'), 'RELATIVE');
+        $showgrading = $format->getpath($data, array('#', 'showgrading', 0, '#'), '1');
+        $numberingstyle = $format->getpath($data, array('#', 'numberingstyle', 0, '#'), '1');
         $this->set_options_for_import($newquestion, $layouttype, $selecttype, $selectcount,
-            $gradingtype, $showgrading, $numberingstyle);
+                                        $gradingtype, $showgrading, $numberingstyle);
 
-        $newquestion->answer = [];
-        $newquestion->answerformat = [];
-        $newquestion->fraction = [];
-        $newquestion->feedback = [];
-        $newquestion->feedbackformat = [];
+        $newquestion->answer = array();
+        $newquestion->answerformat = array();
+        $newquestion->fraction = array();
+        $newquestion->feedback = array();
+        $newquestion->feedbackformat = array();
 
         $i = 0;
-        while ($answer = $format->getpath($data, ['#', 'answer', $i], '')) {
+        while ($answer = $format->getpath($data, array('#', 'answer', $i), '')) {
             $ans = $format->import_answer($answer, true, $format->get_format($newquestion->questiontextformat));
             $newquestion->answer[$i] = $ans->answer;
             $newquestion->fraction[$i] = 1; // Will be reset later in save_question_options().
@@ -629,8 +771,10 @@ class qtype_ordering extends question_type {
             $i++;
         }
 
-        $format->import_combined_feedback($newquestion, $data);
+        $format->import_combined_feedback($newquestion, $data, false);
         $newquestion->shownumcorrect = $format->getpath($data, ['#', 'shownumcorrect', 0, '#'], null);
+        // Check that the required feedback fields exist.
+        $this->check_ordering_combined_feedback($newquestion);
 
         $format->import_hints($newquestion, $data, true, true);
 
@@ -655,73 +799,185 @@ class qtype_ordering extends question_type {
     }
 
     /**
+     * Fix empty or long question name
+     *
+     * @param string $name
+     * @param string $defaultname (optional, default='')
+     * @param integer $maxnamelength (optional, default=42)
+     * @return string Fixed name
+     */
+    public function fix_questionname($name, $defaultname='', $maxnamelength = 42) {
+        if (trim($name) == '') {
+            if ($defaultname) {
+                $name = $defaultname;
+            } else {
+                $name = get_string('defaultquestionname', 'qtype_ordering');
+            }
+        }
+        if (strlen($name) > $maxnamelength) {
+            $name = substr($name, 0, $maxnamelength);
+            if ($pos = strrpos($name, ' ')) {
+                $name = substr($name, 0, $pos);
+            }
+            $name .= ' ...';
+        }
+        return $name;
+    }
+
+    /**
      * Set layouttype, selecttype, selectcount, gradingtype, showgrading based on their textual representation
      *
-     * @param stdClass $question the question object
-     * @param string $layouttype the layout type
-     * @param string $selecttype the select type
-     * @param string $selectcount the number of items to display
-     * @param string $gradingtype the grading type
-     * @param string $showgrading the grading details or not
-     * @param string $numberingstyle the numbering style
+     * @param object $question (passed by reference)
+     * @param string $layout the layout type
+     * @param string $select the select type
+     * @param string $count the number of items to display
+     * @param string $grading the grading type
+     * @param string $show the grading details or not
      */
-    public function set_options_for_import(stdClass $question, string $layouttype, string $selecttype, string $selectcount,
-            string $gradingtype, string $showgrading, string $numberingstyle): void {
+    public function set_options_for_import(&$question, $layouttype, $selecttype, $selectcount,
+                                                       $gradingtype, $showgrading, $numberingstyle) {
 
         // Set "layouttype" option.
-        $question->layouttype = match (strtoupper($layouttype)) {
-            'HORIZONTAL', 'HORI', 'H', '1' => qtype_ordering_question::LAYOUT_HORIZONTAL,
-            default => qtype_ordering_question::LAYOUT_VERTICAL,
-        };
+        switch (strtoupper($layouttype)) {
+
+            case 'HORIZONTAL':
+            case 'HORI':
+            case 'H':
+            case '1':
+                $question->layouttype = qtype_ordering_question::LAYOUT_HORIZONTAL;
+                break;
+
+            case 'VERTICAL':
+            case 'VERT':
+            case 'V':
+            case '0':
+                $question->layouttype = qtype_ordering_question::LAYOUT_VERTICAL;
+                break;
+
+            default:
+                $question->layouttype = qtype_ordering_question::LAYOUT_VERTICAL;
+        }
 
         // Set "selecttype" option.
-        $question->selecttype = match (strtoupper($selecttype)) {
-            'ALL', 'EXACT' => qtype_ordering_question::SELECT_ALL,
-            'CONTIGUOUS', 'CONTIG' => qtype_ordering_question::SELECT_CONTIGUOUS,
-            default => qtype_ordering_question::SELECT_RANDOM,
-        };
+        switch (strtoupper($selecttype)) {
+
+            case 'ALL':
+            case 'EXACT':
+                $question->selecttype = qtype_ordering_question::SELECT_ALL;
+                break;
+
+            case 'RANDOM':
+            case 'REL':
+                $question->selecttype = qtype_ordering_question::SELECT_RANDOM;
+                break;
+
+            case 'CONTIGUOUS':
+            case 'CONTIG':
+                $question->selecttype = qtype_ordering_question::SELECT_CONTIGUOUS;
+                break;
+
+            default:
+                $question->selecttype = qtype_ordering_question::SELECT_RANDOM;
+        }
 
         // Set "selectcount" option - this used to be ($count - 2).
-        if (is_numeric($selectcount) && $selectcount >= qtype_ordering_question::MIN_SUBSET_ITEMS) {
+        if (is_numeric($selectcount)) {
             $question->selectcount = intval($selectcount);
         } else {
-            $question->selectcount = qtype_ordering_question::MIN_SUBSET_ITEMS; // Default!
+            $question->selectcount = 3; // Default!
         }
 
         // Set "gradingtype" option.
-        $question->gradingtype = match (strtoupper($gradingtype)) {
-            'ALL_OR_NOTHING' => qtype_ordering_question::GRADING_ALL_OR_NOTHING,
-            'ABS', 'ABSOLUTE', 'ABSOLUTE_POSITION' => qtype_ordering_question::GRADING_ABSOLUTE_POSITION,
-            'RELATIVE_NEXT_INCLUDE_LAST' => qtype_ordering_question::GRADING_RELATIVE_NEXT_INCLUDE_LAST,
-            'RELATIVE_ONE_PREVIOUS_AND_NEXT' => qtype_ordering_question::GRADING_RELATIVE_ONE_PREVIOUS_AND_NEXT,
-            'RELATIVE_ALL_PREVIOUS_AND_NEXT' => qtype_ordering_question::GRADING_RELATIVE_ALL_PREVIOUS_AND_NEXT,
-            'LONGEST_ORDERED_SUBSET' => qtype_ordering_question::GRADING_LONGEST_ORDERED_SUBSET,
-            'LONGEST_CONTIGUOUS_SUBSET' => qtype_ordering_question::GRADING_LONGEST_CONTIGUOUS_SUBSET,
-            'RELATIVE_TO_CORRECT' => qtype_ordering_question::GRADING_RELATIVE_TO_CORRECT,
-            default => qtype_ordering_question::GRADING_RELATIVE_NEXT_EXCLUDE_LAST,
-        };
+        switch (strtoupper($gradingtype)) {
+
+            case 'ALL_OR_NOTHING':
+                $question->gradingtype = qtype_ordering_question::GRADING_ALL_OR_NOTHING;
+                break;
+
+            case 'ABS':
+            case 'ABSOLUTE':
+            case 'ABSOLUTE_POSITION':
+                $question->gradingtype = qtype_ordering_question::GRADING_ABSOLUTE_POSITION;
+                break;
+
+            case 'REL':
+            case 'RELATIVE':
+            case 'RELATIVE_NEXT_EXCLUDE_LAST':
+                $question->gradingtype = qtype_ordering_question::GRADING_RELATIVE_NEXT_EXCLUDE_LAST;
+                break;
+
+            case 'RELATIVE_NEXT_INCLUDE_LAST':
+                $question->gradingtype = qtype_ordering_question::GRADING_RELATIVE_NEXT_INCLUDE_LAST;
+                break;
+
+            case 'RELATIVE_ONE_PREVIOUS_AND_NEXT':
+                $question->gradingtype = qtype_ordering_question::GRADING_RELATIVE_ONE_PREVIOUS_AND_NEXT;
+                break;
+
+            case 'RELATIVE_ALL_PREVIOUS_AND_NEXT':
+                $question->gradingtype = qtype_ordering_question::GRADING_RELATIVE_ALL_PREVIOUS_AND_NEXT;
+                break;
+
+            case 'LONGEST_ORDERED_SUBSET':
+                $question->gradingtype = qtype_ordering_question::GRADING_LONGEST_ORDERED_SUBSET;
+                break;
+
+            case 'LONGEST_CONTIGUOUS_SUBSET':
+                $question->gradingtype = qtype_ordering_question::GRADING_LONGEST_CONTIGUOUS_SUBSET;
+                break;
+
+            case 'RELATIVE_TO_CORRECT':
+                $question->gradingtype = qtype_ordering_question::GRADING_RELATIVE_TO_CORRECT;
+                break;
+
+            default:
+                $question->gradingtype = qtype_ordering_question::GRADING_RELATIVE_NEXT_EXCLUDE_LAST;
+        }
 
         // Set "showgrading" option.
-        $question->showgrading = match (strtoupper($showgrading)) {
-            'HIDE', 'FALSE', 'NO' => 0,
-            default => 1,
-        };
+        switch (strtoupper($showgrading)) {
+
+            case 'SHOW':
+            case 'TRUE':
+            case 'YES':
+                $question->showgrading = 1;
+                break;
+
+            case 'HIDE':
+            case 'FALSE':
+            case 'NO':
+                $question->showgrading = 0;
+                break;
+
+            default:
+                $question->showgrading = 1;
+                break;
+        }
 
         // Set "numberingstyle" option.
-        $question->numberingstyle = match ($numberingstyle) {
-            'none', '123', 'abc', 'ABCD', 'iii', 'IIII' => $numberingstyle,
-            default => qtype_ordering_question::NUMBERING_STYLE_DEFAULT,
-        };
+        switch ($numberingstyle) {
+
+            case 'none':
+            case '123':
+            case 'abc':
+            case 'ABCD':
+            case 'iii':
+            case 'IIII':
+                $question->numberingstyle = $numberingstyle;
+                break;
+
+            default:
+                $question->numberingstyle = qtype_ordering_question::NUMBERING_STYLE_DEFAULT;
+        }
     }
 
     /**
      * Return the answer numbering style.
      * This method is used by "tests/questiontype_test.php".
-     *
-     * @param stdClass $questiondata
+     * @param $questiondata
      * @return string
      */
-    public function get_numberingstyle(stdClass $questiondata): string {
+    public function get_numberingstyle($questiondata) {
         return $questiondata->options->numberingstyle;
     }
 }

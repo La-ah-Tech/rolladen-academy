@@ -32,10 +32,8 @@ class backup_qtype_ordering_plugin extends backup_qtype_plugin {
 
     /**
      * Returns the qtype information to attach to question element
-     *
-     * @return backup_plugin_element
      */
-    protected function define_question_plugin_structure(): backup_plugin_element {
+    protected function define_question_plugin_structure() {
 
         // Define the virtual plugin element with the condition to fulfill.
         $plugin = $this->get_plugin_element(null, '../../qtype', 'ordering');
@@ -51,19 +49,18 @@ class backup_qtype_ordering_plugin extends backup_qtype_plugin {
         $this->add_question_question_answers($pluginwrapper);
 
         // Now create the qtype own structures.
-        $fields = ['layouttype', 'selecttype', 'selectcount',
-            'gradingtype', 'showgrading', 'numberingstyle',
-            'correctfeedback', 'correctfeedbackformat',
-            'incorrectfeedback', 'incorrectfeedbackformat',
-            'partiallycorrectfeedback', 'partiallycorrectfeedbackformat', 'shownumcorrect',
-        ];
-        $ordering = new backup_nested_element('ordering', ['id'], $fields);
+        $fields = array('layouttype', 'selecttype', 'selectcount',
+                        'gradingtype', 'showgrading', 'numberingstyle',
+                        'correctfeedback', 'correctfeedbackformat',
+                        'incorrectfeedback', 'incorrectfeedbackformat',
+                        'partiallycorrectfeedback', 'partiallycorrectfeedbackformat', 'shownumcorrect');
+        $ordering = new backup_nested_element('ordering', array('id'), $fields);
 
         // Now the own qtype tree.
         $pluginwrapper->add_child($ordering);
 
         // Set source to populate the data.
-        $params = ['questionid' => backup::VAR_PARENTID];
+        $params = array('questionid' => backup::VAR_PARENTID);
         $ordering->set_source_table('qtype_ordering_options', $params);
 
         // Don't need to annotate ids nor files.

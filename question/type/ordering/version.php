@@ -25,6 +25,7 @@
 // Prevent direct access to this script.
 defined('MOODLE_INTERNAL') || die();
 
+$plugin->cron      = 0;
 $plugin->component = 'qtype_ordering';
 $plugin->requires  = 2025040800;
 $plugin->version   = 2025041400; // The current plugin version (Date: YYYYMMDDXX).
