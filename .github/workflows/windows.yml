@@ -59,7 +59,7 @@ jobs:
             db: pgsql
             extensions: exif, fileinfo, gd, intl, pgsql, mysql, redis, soap, sodium, zip
           - os: windows-latest
-            php: 8.2
+            php: 8.3
             db: pgsql
             extensions: exif, fileinfo, gd, intl, pgsql, mysql, redis, soap, sodium, zip
 
@@ -140,7 +140,7 @@ jobs:
           echo "pathtophp=$(which php)" >> $GITHUB_ENV # Inject installed pathtophp to env. The template config needs it.
           cp .github/workflows/config-template.php config.php
           mkdir ../moodledata
-          php admin/tool/phpunit/cli/init.php --no-composer-self-update
+          php public/admin/tool/phpunit/cli/init.php --no-composer-self-update
 
       - name: Running PHPUnit tests
         env:
