@@ -265,6 +265,7 @@ function hvp_admin_add_generic_css_and_js($page, $liburl, $settings = null) {
     $page->requires->data_for_js('H5PAdminIntegration', $settings, true);
     $page->requires->css(new moodle_url($liburl . 'styles/h5p.css' . hvp_get_cache_buster()));
     $page->requires->css(new moodle_url($liburl . 'styles/h5p-admin.css' . hvp_get_cache_buster()));
+    $page->requires->css(new moodle_url($liburl . 'styles/h5p-fonts.css' . hvp_get_cache_buster()));
 
     // Add settings.
     $page->requires->data_for_js('h5p', hvp_get_core_settings(\context_system::instance()), true);
@@ -409,7 +410,7 @@ function hvp_content_upgrade_progress($libraryid) {
  *                to upgrade script
  */
 function hvp_get_library_upgrade_info($name, $major, $minor) {
-    $library = (object) array(
+    $response = (object) array(
         'name' => $name,
         'version' => (object) array(
             'major' => $major,
@@ -418,17 +419,15 @@ function hvp_get_library_upgrade_info($name, $major, $minor) {
     );
 
     $core = \mod_hvp\framework::instance();
-
-    $library->semantics = $core->loadLibrarySemantics($library->name, $library->version->major, $library->version->minor);
-
+    $library = $core->loadLibrary($name, $major, $minor);
     $context = \context_system::instance();
-    $libraryfoldername = "{$library->name}-{$library->version->major}.{$library->version->minor}";
+    $libraryfoldername = \H5PCore::libraryToFolderName($library);
     if (\mod_hvp\file_storage::fileExists($context->id, 'libraries', '/' . $libraryfoldername . '/', 'upgrades.js')) {
         $basepath = \mod_hvp\view_assets::getsiteroot() . '/';
-        $library->upgradesScript = "{$basepath}pluginfile.php/{$context->id}/mod_hvp/libraries/{$libraryfoldername}/upgrades.js";
+        $response->upgradesScript = "{$basepath}pluginfile.php/{$context->id}/mod_hvp/libraries/{$libraryfoldername}/upgrades.js";
     }
 
-    return $library;
+    return $response;
 }
 
 /**

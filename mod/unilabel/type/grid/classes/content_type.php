@@ -126,6 +126,9 @@ class content_type extends \mod_unilabel\content_type {
         $mform->addElement('advcheckbox', $prefix . 'usemobile', get_string('use_mobile_images', $this->component));
         $mform->addHelpButton($prefix . 'usemobile', 'use_mobile_images', $this->component);
 
+        $mform->addElement('advcheckbox', $prefix . 'useajax', get_string('use_ajax', $this->component));
+        $mform->addHelpButton($prefix . 'useajax', 'use_ajax', $this->component);
+
         // Prepare the activity url picker.
         $formid       = $mform->getAttribute('id');
         $course       = $form->get_course();
@@ -180,7 +183,6 @@ class content_type extends \mod_unilabel\content_type {
             'checkbox',
             $prefix . 'newwindow',
             get_string('newwindow')
-
         );
         $repeatarray[] = $mform->createElement(
             'group',
@@ -298,6 +300,7 @@ class content_type extends \mod_unilabel\content_type {
             $data[$prefix . 'height']        = $this->config->height ?? 300;
             $data[$prefix . 'showintro']     = !empty($this->config->showintro);
             $data[$prefix . 'usemobile']     = !empty($this->config->usemobile);
+            $data[$prefix . 'useajax']       = !empty($this->config->useajax);
 
             return $data;
         }
@@ -321,6 +324,7 @@ class content_type extends \mod_unilabel\content_type {
         $data[$prefix . 'height']    = $unilabeltyperecord->height;
         $data[$prefix . 'showintro'] = $unilabeltyperecord->showintro;
         $data[$prefix . 'usemobile'] = $unilabeltyperecord->usemobile;
+        $data[$prefix . 'useajax']   = $unilabeltyperecord->useajax;
 
         // Set default data for tiles.
         $tiles = $DB->get_records(
@@ -412,6 +416,8 @@ class content_type extends \mod_unilabel\content_type {
      * @return string
      */
     public function get_content($unilabel, $cm, \plugin_renderer_base $renderer) {
+        global $PAGE;
+
         if (!$unilabeltyperecord = $this->load_unilabeltype_record($unilabel->id)) {
             $content = [
                 'intro'    => get_string('nocontent', $this->component),
@@ -419,6 +425,12 @@ class content_type extends \mod_unilabel\content_type {
                 'hastiles' => false,
             ];
         } else {
+            if (isloggedin()) {
+                $useajax = !empty($unilabeltyperecord->useajax);
+            } else {
+                // If the user is not logged in, we can not load the content using the fragment api.
+                $useajax = false;
+            }
             $intro     = $this->format_intro($unilabel, $cm);
             $showintro = !empty($unilabeltyperecord->showintro);
             $content   = [
@@ -430,6 +442,9 @@ class content_type extends \mod_unilabel\content_type {
                 'tiles'        => array_values($this->tiles),
                 'hastiles'     => count($this->tiles) > 0,
                 'cmid'         => $cm->id,
+                'contextid'    => $this->context->id,
+                'unilabelid'   => $unilabel->id,
+                'useajax'      => $useajax,
             ];
             $content['colclasses'] = $this->get_bootstrap_cols(
                 $unilabeltyperecord->columns,
@@ -439,6 +454,44 @@ class content_type extends \mod_unilabel\content_type {
         }
 
         $content = $renderer->render_from_template('unilabeltype_grid/grid', $content);
+
+        $PAGE->requires->js_call_amd('unilabeltype_grid/dyn_modal', 'init', [$unilabel->id]);
+        return $content;
+    }
+
+    /**
+     * Retrieves and formats the content of a specific grid tile used by the Fragment API.
+     *
+     * @param array $args An associative array containing the following keys:
+     *                    - contextid: The ID of the context
+     *                    - cmid: The course module ID
+     *                    - id: The ID of the grid tile
+     *
+     * @return string The formatted content of the grid tile
+     *
+     * @throws \moodle_exception If required parameters are missing or if the context is incorrect
+     */
+    public function get_fragment($args) {
+        global $DB;
+
+        // Check args.
+        if (empty($args['contextid']) || empty($args['cmid']) || empty($args['id'])) {
+            throw new \moodle_exception('missing param in argument');
+        }
+
+        $contextid = (int) $args['contextid'];
+        $cmid      = (int) $args['cmid'];
+        $id        = (int) $args['id'];
+
+        // Double check the given contextid with the context of the course module.
+        $context = \context_module::instance($cmid);
+        if ($context->id !== $contextid) {
+            throw new \moodle_exception('wrong contextid');
+        }
+        require_capability('mod/unilabel:view', $context);
+
+        $tile = $DB->get_record('unilabeltype_grid_tile', ['id' => $id], '*', MUST_EXIST);
+        $content = $this->format_content($tile, $context);
 
         return $content;
     }
@@ -496,6 +549,7 @@ class content_type extends \mod_unilabel\content_type {
         $unilabeltyperecord->height    = $formdata->{$prefix . 'height'};
         $unilabeltyperecord->showintro = $formdata->{$prefix . 'showintro'};
         $unilabeltyperecord->usemobile = !empty($formdata->{$prefix . 'usemobile'});
+        $unilabeltyperecord->useajax   = !empty($formdata->{$prefix . 'useajax'});
 
         $DB->update_record('unilabeltype_grid', $unilabeltyperecord);
 
@@ -578,7 +632,7 @@ class content_type extends \mod_unilabel\content_type {
      * Load and cache the unilabel record.
      *
      * @param  int       $unilabelid
-     * @return \stdClass
+     * @return ?\stdClass
      */
     public function load_unilabeltype_record($unilabelid) {
         global $DB;
@@ -587,7 +641,7 @@ class content_type extends \mod_unilabel\content_type {
             if (!$this->unilabeltyperecord = $DB->get_record('unilabeltype_grid', ['unilabelid' => $unilabelid])) {
                 $this->tiles = [];
 
-                return;
+                return null;
             }
             $this->cm      = get_coursemodule_from_instance('unilabel', $unilabelid);
             $this->context = \context_module::instance($this->cm->id);
@@ -600,7 +654,9 @@ class content_type extends \mod_unilabel\content_type {
                 $tile->imagemobileurl = $this->get_image_mobile_for_tile($tile);
                 $tile->titleplain     = empty($tile->title) ? get_string('tilenr', $this->component, $index + 1) : $tile->title;
                 $tile->title          = format_text($tile->titleplain);
-                $tile->content        = $this->format_content($tile, $this->context);
+                if (empty($tile->url)) {
+                    $tile->content = $this->format_content($tile, $this->context);
+                }
                 $tile->nr             = $index;
                 ++$index;
             }

@@ -1104,12 +1104,12 @@ function get_my_remotecourses($userid=0) {
     $sql = "SELECT c.id, c.remoteid, c.shortname, c.fullname,
                    c.hostid, c.summary, c.summaryformat, c.categoryname AS cat_name,
                    h.name AS hostname
-              FROM {mnetservice_enrol_courses} c
+              FROM mnetservice_enrol_courses c
               JOIN (SELECT DISTINCT hostid, remotecourseid
-                      FROM {mnetservice_enrol_enrolments}
+                      FROM mnetservice_enrol_enrolments
                      WHERE userid = ?
                    ) e ON (e.hostid = c.hostid AND e.remotecourseid = c.remoteid)
-              JOIN {mnet_host} h ON h.id = c.hostid";
+              JOIN mnet_host h ON h.id = c.hostid";
 
     return $DB->get_records_sql($sql, array($userid));
 }

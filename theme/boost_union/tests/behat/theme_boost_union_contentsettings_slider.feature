@@ -1,4 +1,4 @@
-@theme @theme_boost_union @theme_boost_union_contentsettings @theme_boost_union_contentsettings_slider @javascript @_file_upload
+@theme @theme_boost_union @theme_boost_union_contentsettings @theme_boost_union_contentsettings_slider
 
 Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "Content" page
   In order to use the features
@@ -14,15 +14,9 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
       | slide1enabled | yes                                | theme_boost_union |
       | slide1caption | Slide 1                            | theme_boost_union |
       | slide1content | This is a test content for slide 1 | theme_boost_union |
-    When I log in as "admin"
-    And Behat debugging is disabled
-    And I navigate to "Appearance > Boost Union > Content" in site administration
-    And I click on "Slider" "link" in the "#adminsettings .nav-tabs" "css_element"
-    And I upload "theme/boost_union/tests/fixtures/login_bg1.png" file to "Slide 1 background image" filemanager
-    And I press "Save changes"
-    And I am on site homepage
-    And Behat debugging is enabled
-    And I log out
+    And the following "theme_boost_union > setting files" exist:
+      | filearea              | filepath                                       |
+      | slide1backgroundimage | theme/boost_union/tests/fixtures/login_bg1.png |
 
   Scenario: Setting: Slider - Display the slider on the frontpage only and nowhere else
     Given the following "courses" exist:
@@ -41,7 +35,7 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
     When I am on "Course 1" course homepage
     Then "#themeboostunionslide1" "css_element" should not exist
     When I log out
-    And I click on "Log in" "link" in the ".logininfo" "css_element"
+    And I am on login page
     Then "#themeboostunionslide1" "css_element" should not exist
 
   Scenario Outline: Setting: Slider - Display the slider wrapper and the individual slide only if it is enabled
@@ -116,9 +110,21 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
 
     Examples:
       | setting | slideshouldornot | carouselshouldornot |
-      | 0       | should not       | should not          |
       | 1       | should           | should not          |
       | 2       | should           | should              |
+
+  Scenario Outline: Setting: Slider - Slider variant
+    Given the following config values are set as admin:
+      | config        | value     | plugin            |
+      | slidervariant | <setting> | theme_boost_union |
+    When I log in as "teacher1"
+    And I am on site homepage
+    Then "#themeboostunionslider.carousel-dark" "css_element" <shouldornot> exist
+
+    Examples:
+      | setting | shouldornot |
+      | dark    | should      |
+      | light   | should not  |
 
   Scenario Outline: Setting: Slider - Slider interval speed
     Given the following config values are set as admin:
@@ -126,7 +132,7 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
       | sliderinterval | <setting> | theme_boost_union |
     When I log in as "teacher1"
     And I am on site homepage
-    Then the "data-interval" attribute of "#themeboostunionslider" "css_element" should contain "<speed>"
+    Then the "data-bs-interval" attribute of "#themeboostunionslider" "css_element" should contain "<speed>"
 
     Examples:
       | setting | speed |
@@ -140,7 +146,7 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
       | sliderkeyboard | <setting> | theme_boost_union |
     When I log in as "teacher1"
     And I am on site homepage
-    Then the "data-keyboard" attribute of "#themeboostunionslider" "css_element" should contain "<keyboard>"
+    Then the "data-bs-keyboard" attribute of "#themeboostunionslider" "css_element" should contain "<keyboard>"
 
     Examples:
       | setting | keyboard |
@@ -153,7 +159,7 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
       | sliderpause | <setting> | theme_boost_union |
     When I log in as "teacher1"
     And I am on site homepage
-    Then the "data-pause" attribute of "#themeboostunionslider" "css_element" should contain "<pause>"
+    Then the "data-bs-pause" attribute of "#themeboostunionslider" "css_element" should contain "<pause>"
 
     Examples:
       | setting | pause |
@@ -166,7 +172,7 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
       | sliderride | <setting> | theme_boost_union |
     When I log in as "teacher1"
     And I am on site homepage
-    Then the "data-ride" attribute of "#themeboostunionslider" "css_element" should contain "<ride>"
+    Then the "data-bs-ride" attribute of "#themeboostunionslider" "css_element" should contain "<ride>"
 
     Examples:
       | setting | ride     |
@@ -180,7 +186,7 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
       | sliderwrap | <setting> | theme_boost_union |
     When I log in as "teacher1"
     And I am on site homepage
-    Then the "data-wrap" attribute of "#themeboostunionslider" "css_element" should contain "<wrap>"
+    Then the "data-bs-wrap" attribute of "#themeboostunionslider" "css_element" should contain "<wrap>"
 
     Examples:
       | setting | wrap  |
@@ -194,7 +200,7 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
     When I log in as "teacher1"
     And I am on site homepage
     Then "#themeboostunionslide1 > img" "css_element" should exist
-    And the "src" attribute of "#themeboostunionslide1 > img" "css_element" should contain "pluginfile.php/1/theme_boost_union/slidebackgroundimage1/0/login_bg1.png"
+    And the "src" attribute of "#themeboostunionslide1 > img" "css_element" should contain "pluginfile.php/1/theme_boost_union/slide1backgroundimage/0/login_bg1.png"
     And the "alt" attribute of "#themeboostunionslide1 > img" "css_element" should contain "This is the image description"
 
   Scenario: Setting: Slider - Display an individual slide only if an image is uploaded
@@ -258,24 +264,11 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
       | slide4linktitle  | Link to Google                     | theme_boost_union |
       | slide4linksource | 2                                  | theme_boost_union |
       | slide4linktarget | new                                | theme_boost_union |
-    And I log in as "admin"
-    And Behat debugging is disabled
-    And I navigate to "Appearance > Boost Union > Content" in site administration
-    And I click on "Slider" "link" in the "#adminsettings .nav-tabs" "css_element"
-    And I upload "theme/boost_union/tests/fixtures/login_bg1.png" file to "Slide 2 background image" filemanager
-    # For a strange reason, Behat fails if we upload all images at once. So we simply save the form after each upload.
-    And I press "Save changes"
-    And I navigate to "Appearance > Boost Union > Content" in site administration
-    And I click on "Slider" "link" in the "#adminsettings .nav-tabs" "css_element"
-    And I upload "theme/boost_union/tests/fixtures/login_bg1.png" file to "Slide 3 background image" filemanager
-    And I press "Save changes"
-    And I navigate to "Appearance > Boost Union > Content" in site administration
-    And I click on "Slider" "link" in the "#adminsettings .nav-tabs" "css_element"
-    And I upload "theme/boost_union/tests/fixtures/login_bg1.png" file to "Slide 4 background image" filemanager
-    And I press "Save changes"
-    And I am on site homepage
-    And Behat debugging is enabled
-    And I log out
+    And the following "theme_boost_union > setting files" exist:
+      | filearea              | filepath                                       |
+      | slide2backgroundimage | theme/boost_union/tests/fixtures/login_bg1.png |
+      | slide3backgroundimage | theme/boost_union/tests/fixtures/login_bg1.png |
+      | slide4backgroundimage | theme/boost_union/tests/fixtures/login_bg1.png |
     When I log in as "teacher1"
     And I am on site homepage
     Then "#themeboostunionslide1 > a" "css_element" should not exist
@@ -319,24 +312,11 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
       | slide6enabled | yes                               | theme_boost_union |
       | slide6content | This is a test content for tile 6 | theme_boost_union |
       | slide6order   | <orders6>                         | theme_boost_union |
-    And I log in as "admin"
-    And Behat debugging is disabled
-    And I navigate to "Appearance > Boost Union > Content" in site administration
-    And I click on "Slider" "link" in the "#adminsettings .nav-tabs" "css_element"
-    And I upload "theme/boost_union/tests/fixtures/login_bg1.png" file to "Slide 2 background image" filemanager
-    # For a strange reason, Behat fails if we upload all images at once. So we simply save the form after each upload.
-    And I press "Save changes"
-    And I navigate to "Appearance > Boost Union > Content" in site administration
-    And I click on "Slider" "link" in the "#adminsettings .nav-tabs" "css_element"
-    And I upload "theme/boost_union/tests/fixtures/login_bg1.png" file to "Slide 4 background image" filemanager
-    And I press "Save changes"
-    And I navigate to "Appearance > Boost Union > Content" in site administration
-    And I click on "Slider" "link" in the "#adminsettings .nav-tabs" "css_element"
-    And I upload "theme/boost_union/tests/fixtures/login_bg1.png" file to "Slide 6 background image" filemanager
-    And I press "Save changes"
-    And I am on site homepage
-    And Behat debugging is enabled
-    And I log out
+    And the following "theme_boost_union > setting files" exist:
+      | filearea              | filepath                                       |
+      | slide2backgroundimage | theme/boost_union/tests/fixtures/login_bg1.png |
+      | slide4backgroundimage | theme/boost_union/tests/fixtures/login_bg1.png |
+      | slide6backgroundimage | theme/boost_union/tests/fixtures/login_bg1.png |
     When I log in as "teacher1"
     And I am on site homepage
     Then "//div[@id='themeboostunionslider']/div[contains(@class, 'carousel-inner')]/*[<positions1>][@id='themeboostunionslide1']" "xpath_element" should exist
@@ -352,12 +332,12 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
       | 1       | 1          | 1       | 2          | 2       | 3          | 3       | 4          |
       | 5       | 2          | 6       | 3          | 3       | 1          | 8       | 4          |
 
+  @javascript
   Scenario: Setting: Slider - Show and hide the admin settings based on the main "Enable slide x" setting
     Given the following config values are set as admin:
       | config        | value | plugin            |
       | slide1enabled | yes   | theme_boost_union |
     When I log in as "admin"
-    And Behat debugging is disabled
     And I navigate to "Appearance > Boost Union > Content" in site administration
     And I click on "Slider" "link" in the "#adminsettings .nav-tabs" "css_element"
     Then "#admin-slide1backgroundimage" "css_element" should be visible
@@ -375,6 +355,7 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
   Scenario Outline: Setting: Slider - Display the configured content style
     Given the following config values are set as admin:
       | config             | value                              | plugin            |
+      | slidervariant      | light                              | theme_boost_union |
       | slide1contentstyle | <style>                            | theme_boost_union |
       | slide1content      | This is a test content for slide 1 | theme_boost_union |
     When I log in as "teacher1"
@@ -383,8 +364,36 @@ Feature: Configuring the theme_boost_union plugin for the "Slider" tab on the "C
     And "//div[@id='themeboostunionslide1']//div[contains(@class, 'carousel-caption') and contains(@class, '<shouldnotclass1>')]" "xpath_element" should not exist
     And "//div[@id='themeboostunionslide1']//div[contains(@class, 'carousel-caption') and contains(@class, '<shouldnotclass2>')]" "xpath_element" should not exist
 
-    # We do not want to burn too much CPU time by testing all available options. We just test the default value and a non-default values.
+    # We do not want to burn too much CPU time by testing all available options. We just test the nochange default value and two non-default values.
     Examples:
-      | style      | shouldclass      | shouldnotclass1   | shouldnotclass2   |
-      | light      | slide-light      | slide-lightshadow | slide-dark        |
-      | darkshadow | slide-darkshadow | slide-lightshadow | slide-light       |
+      | style      | shouldclass      | shouldnotclass1 | shouldnotclass2  |
+      | nochange   | slide-nochange   | slide-light     | slide-darkshadow |
+      | light      | slide-light      | slide-nochange  | slide-darkshadow |
+      | darkshadow | slide-darkshadow | slide-nochange  | slide-light      |
+
+  Scenario Outline: Setting: Slider - Individual slide interval
+    Given the following config values are set as admin:
+      | config         | value | plugin            |
+      | sliderinterval | 5000  | theme_boost_union |
+    Given the following config values are set as admin:
+      | config          | value                              | plugin            |
+      | slide1interval  | <slide1interval>                   | theme_boost_union |
+      | slide2enabled   | yes                                | theme_boost_union |
+      | slide2caption   | Slide 2                            | theme_boost_union |
+      | slide2content   | This is a test content for slide 2 | theme_boost_union |
+      | slide2interval  | <slide2interval>                   | theme_boost_union |
+    And the following "theme_boost_union > setting files" exist:
+      | filearea              | filepath                                       |
+      | slide2backgroundimage | theme/boost_union/tests/fixtures/login_bg2.png |
+    When I log in as "teacher1"
+    And I am on site homepage
+    Then the "data-bs-interval" attribute of "#themeboostunionslider" "css_element" should contain "5000"
+    And the "data-bs-interval" attribute of "#themeboostunionslide1" "css_element" <slide1attribute>
+    And the "data-bs-interval" attribute of "#themeboostunionslide2" "css_element" <slide2attribute>
+
+    Examples:
+      | slide1interval | slide2interval | slide1attribute       | slide2attribute       |
+      | 3000           | 5000           | should contain "3000" | should contain "5000" |
+      | 2500           |                | should contain "2500" | should not be set     |
+      |                | 7000           | should not be set     | should contain "7000" |
+      |                |                | should not be set     | should not be set     |

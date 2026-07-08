@@ -18,6 +18,7 @@
  * Handles all the RSS related tasks for the module
  *
  * @package   mod_lightboxgallery
+ * @copyright Copyright (c) 2021 Open LMS (https://www.openlms.net)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -28,8 +29,7 @@ require_once('imageclass.php');
 
 /**
  * Returns the path to the cached rss feed contents. Creates/updates the cache if necessary.
- * @global object $CFG
- * @global object $DB
+ *
  * @param object $context the context
  * @param array $args the arguments received in the url
  * @return string the full path to the cached RSS feed directory. Null if there is a problem.
@@ -58,10 +58,10 @@ function lightboxgallery_rss_get_feed($context, $args) {
         }
     }
 
-    $gallery = $DB->get_record('lightboxgallery', array('id' => $galleryid), '*', MUST_EXIST);
+    $gallery = $DB->get_record('lightboxgallery', ['id' => $galleryid], '*', MUST_EXIST);
 
-    $captions = array();
-    if ($cobjs = $DB->get_records('lightboxgallery_image_meta',  array('metatype' => 'caption', 'gallery' => $gallery->id))) {
+    $captions = [];
+    if ($cobjs = $DB->get_records('lightboxgallery_image_meta', ['metatype' => 'caption', 'gallery' => $gallery->id])) {
         foreach ($cobjs as $cobj) {
             $captions[$cobj->image] = $cobj->description;
         }
@@ -70,7 +70,7 @@ function lightboxgallery_rss_get_feed($context, $args) {
     $fs = get_file_storage();
     $storedfiles = $fs->get_area_files($context->id, 'mod_lightboxgallery', 'gallery_images');
 
-    $items = array();
+    $items = [];
     $counter = 1;
     $articles = '';
     foreach ($storedfiles as $file) {
@@ -89,12 +89,16 @@ function lightboxgallery_rss_get_feed($context, $args) {
         $articles .= rss_full_tag('guid', 3, false, 'img' . $counter);
 
         $articles .= rss_full_tag('media:description', 3, false, $description);
-        $articles .= rss_full_tag('media:thumbnail', 3, false, '', array('url' => $image->get_thumbnail_url()));
-        $articles .= rss_full_tag('media:content', 3, false, '',
-                        array('url' => $image->get_image_url(), 'type' => $file->get_mimetype()));
+        $articles .= rss_full_tag('media:thumbnail', 3, false, '', ['url' => $image->get_thumbnail_url()]);
+        $articles .= rss_full_tag(
+            'media:content',
+            3,
+            false,
+            '',
+            ['url' => $image->get_image_url(), 'type' => $file->get_mimetype()]
+        );
 
         $articles .= rss_end_tag('item', 2, true);
-
     }
 
     // Get the cache file info.
@@ -108,9 +112,11 @@ function lightboxgallery_rss_get_feed($context, $args) {
     }
 
     // First all rss feeds common headers.
-    $header = lightboxgallery_rss_header(format_string($gallery->name, true),
-                                  $CFG->wwwroot."/mod/lightboxgallery/view.php?id=".$cm->id,
-                                  format_string($gallery->intro, true));
+    $header = lightboxgallery_rss_header(
+        format_string($gallery->name, true),
+        $CFG->wwwroot . "/mod/lightboxgallery/view.php?id=" . $cm->id,
+        format_string($gallery->intro, true)
+    );
 
     // Now all rss feeds common footers.
     if (!empty($header) && !empty($articles)) {
@@ -118,7 +124,7 @@ function lightboxgallery_rss_get_feed($context, $args) {
     }
     // Now, if everything is ok, concatenate it.
     if (!empty($header) && !empty($articles) && !empty($footer)) {
-        $rss = $header.$articles.$footer;
+        $rss = $header . $articles . $footer;
 
         // Save the XML contents to file.
         $status = rss_save_file('mod_lightboxgallery', $filename, $rss);
@@ -131,6 +137,12 @@ function lightboxgallery_rss_get_feed($context, $args) {
     return $cachedfilepath;
 }
 
+/**
+ * This function returns the RSS feed for the lightboxgallery module.
+ *
+ * @return bool
+ * @throws dml_exception
+ */
 function lightboxgallery_rss_feeds() {
     global $CFG;
 
@@ -144,7 +156,6 @@ function lightboxgallery_rss_feeds() {
         if ($galleries = $DB->get_records('lightboxgallery')) {
             foreach ($galleries as $gallery) {
                 if ($gallery->rss && $status) {
-
                     $filename = rss_file_name('lightboxgallery', $gallery);
 
                     if (file_exists($filename)) {
@@ -181,7 +192,6 @@ function lightboxgallery_rss_feeds() {
                             }
                         }
                     }
-
                 }
             }
         }
@@ -190,7 +200,14 @@ function lightboxgallery_rss_feeds() {
     return $status;
 }
 
-function lightboxgallery_rss_get_sql($glossary, $time=0) {
+/**
+ * This function returns the SQL query to get the items for the RSS feed.
+ *
+ * @param stdClass $glossary
+ * @param int $time
+ * @return string
+ */
+function lightboxgallery_rss_get_sql($glossary, $time = 0) {
     // Do we only want new items?
     if ($time) {
         $time = "AND e.timecreated > $time";
@@ -203,6 +220,15 @@ function lightboxgallery_rss_get_sql($glossary, $time=0) {
     return $sql;
 }
 
+/**
+ * This function returns the header for the RSS feed.
+ *
+ * @param string|null $title
+ * @param string|null $link
+ * @param string|null $description
+ * @return false|string
+ * @throws moodle_exception
+ */
 function lightboxgallery_rss_header($title = null, $link = null, $description = null) {
     global $CFG, $USER, $OUTPUT;
 
@@ -212,7 +238,6 @@ function lightboxgallery_rss_header($title = null, $link = null, $description = 
     $site = get_site();
 
     if ($status) {
-
         // Calculate title, link and description.
         if (empty($title)) {
             $title = format_string($site->fullname);
@@ -226,7 +251,7 @@ function lightboxgallery_rss_header($title = null, $link = null, $description = 
 
         // XML headers.
         $result .= "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-        $result .= "<rss version=\"2.0\" xmlns:media=\"http://search.yahoo.com/mrss\"".
+        $result .= "<rss version=\"2.0\" xmlns:media=\"http://search.yahoo.com/mrss\"" .
                     "xmlns:atom=\"http://www.w3.org/2005/Atom\">\n";
 
         // Open the channel.
@@ -241,7 +266,7 @@ function lightboxgallery_rss_header($title = null, $link = null, $description = 
             $result .= rss_full_tag('language', 2, false, substr($USER->lang, 0, 2));
         }
         $today = getdate();
-        $result .= rss_full_tag('copyright', 2, false, '&#169; '. $today['year'] .' '. format_string($site->fullname));
+        $result .= rss_full_tag('copyright', 2, false, '&#169; ' . $today['year'] . ' ' . format_string($site->fullname));
 
         // Write image info.
         $rsspix = $OUTPUT->image_url('i/rsssitelogo');

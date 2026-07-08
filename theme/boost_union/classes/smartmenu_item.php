@@ -27,12 +27,14 @@ namespace theme_boost_union;
 defined('MOODLE_INTERNAL') || die();
 
 use context_system;
-use html_writer;
 use stdClass;
+use xmldb_table;
 use cache;
+use core\output\html_writer;
 use core_course\external\course_summary_exporter;
+use context_course;
 
-require_once($CFG->dirroot.'/theme/boost_union/smartmenus/menulib.php');
+require_once($CFG->dirroot . '/theme/boost_union/smartmenus/menulib.php');
 
 /**
  * The item controller handles actions related to managing items.
@@ -45,7 +47,6 @@ require_once($CFG->dirroot.'/theme/boost_union/smartmenus/menulib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class smartmenu_item {
-
     /**
      * Representing a heading type for a menu item.
      * @var int
@@ -59,10 +60,44 @@ class smartmenu_item {
     const TYPESTATIC = 1;
 
     /**
-     * Represents the type of a dynamic element.
+     * Represents the type of a dynamic courses element.
      * @var int
      */
     const TYPEDYNAMIC = 2;
+
+    /**
+     * Represents the type of a docs element.
+     * @var int
+     */
+    const TYPEDOCS = 3;
+
+    /**
+     * Represents the type of a divider element.
+     * @var int
+     */
+    const TYPEDIVIDER = 4;
+
+    /**
+     * Represents the type of a mailto element.
+     * @var int
+     */
+    const TYPEMAILTO = 5;
+
+    /**
+     * Represents the type of a static element with placeholders.
+     * Unlike the regular static type, items of this type are not cached because their content is variable (user/course/page
+     * context specific). Placeholders in the title and URL will be replaced with actual values at render time.
+     * @var int
+     */
+    const TYPESTATICWITHPLACEHOLDERS = 6;
+
+    /**
+     * Represents the type of a heading element with placeholders.
+     * Unlike the regular heading type, items of this type are not cached because their content is variable (user/course/page
+     * context specific). Placeholders in the title will be replaced with actual values at render time.
+     * @var int
+     */
+    const TYPEHEADINGWITHPLACEHOLDERS = 7;
 
     /**
      * Represents the completion status of an item where the status is 'enrolled'.
@@ -99,6 +134,24 @@ class smartmenu_item {
      * @var int
      */
     const RANGE_FUTURE = 3;
+
+    /**
+     * Show all courses in the dynamic menu item list.
+     * @var int
+     */
+    const STARREDCOURSES_ALL = 0;
+
+    /**
+     * Show only starred courses in the dynamic menu item list (and use server-side cache invalidation).
+     * @var int
+     */
+    const STARREDCOURSES_ONLY_SERVER = 1;
+
+    /**
+     * Show only starred courses in the dynamic menu item list (and use client-side cache invalidation).
+     * @var int
+     */
+    const STARREDCOURSES_ONLY_CLIENT = 2;
 
     /**
      * Hide the item title an all viewport.
@@ -167,6 +220,12 @@ class smartmenu_item {
     const BACKGROUND_OPACITY = 5;
 
     /**
+     * Display the course fullname as title in menu for dynamic menu item.
+     * @var int
+     */
+    const FIELD_FULLNAME = 0;
+
+    /**
      * Display the course shortname as title in menu for dynamic menu item.
      *
      * @var int
@@ -174,10 +233,40 @@ class smartmenu_item {
     const FIELD_SHORTNAME = 1;
 
     /**
-     * Display the course fullname as title in menu for dynamic menu item.
+     * Display the course fullname with shortname in brackets as title in menu for dynamic menu item.
      * @var int
      */
-    const FIELD_FULLNAME = 0;
+    const FIELD_FULLNAME_SHORTNAME = 2;
+
+    /**
+     * Display the course shortname with fullname in brackets as title in menu for dynamic menu item.
+     * @var int
+     */
+    const FIELD_SHORTNAME_FULLNAME = 3;
+
+    /**
+     * Display a custom course field as title in menu for dynamic menu item.
+     * @var int
+     */
+    const FIELD_CUSTOMFIELD = 4;
+
+    /**
+     * Display the course full name with a custom course field value in brackets as title in menu for dynamic menu item.
+     * @var int
+     */
+    const FIELD_FULLNAME_CUSTOMFIELD = 5;
+
+    /**
+     * Display the course short name with a custom course field value in brackets as title in menu for dynamic menu item.
+     * @var int
+     */
+    const FIELD_SHORTNAME_CUSTOMFIELD = 6;
+
+    /**
+     * Do not display any title in menu for dynamic menu item.
+     * @var int
+     */
+    const FIELD_NONE = -1;
 
     /**
      * Sort the course list alphabetically by fullname ascending for dynamic menu item.
@@ -226,6 +315,31 @@ class smartmenu_item {
      * @var int
      */
     const LISTSORT_COURSEIDNUMBER_DESC = 7;
+
+    /**
+     * Display all courses including hidden courses, in the dynamic menu item.
+     *
+     * @var int
+     */
+    const DISPLAY_ALLCOURSES = 0;
+
+    /**
+     * Display only the visible courses in the dynamic menu item.
+     * @var int
+     */
+    const DISPLAY_VISIBLECOURSESONLY = 1;
+
+    /**
+     * Sort hidden and visible courses together, based on other sorting options for dynamic menu item.
+     * @var int
+     */
+    const HIDDENCOURSESORT_TOGETHER = 0;
+
+    /**
+     * Sort the hidden courses at the end of the list for dynamic menu item.
+     * @var int
+     */
+    const HIDDENCOURSESORT_END = 1;
 
     /**
      * The ID of the menu item.
@@ -322,6 +436,8 @@ class smartmenu_item {
         $this->cache->delete_menu($this->item->id);
         // Delete the cached data of current items menu.
         $this->menucache->delete_menu($this->item->menu);
+        // Invalidate shared smartmenus cache keys.
+        smartmenu::invalidate_shared_cache($this->menucache);
     }
 
     /**
@@ -336,10 +452,8 @@ class smartmenu_item {
 
         // Verfiy and Fetch menu record from DB.
         if ($record = $DB->get_record('theme_boost_union_menuitems', ['id' => $itemid ?: $this->id ])) {
-
             // Decode the multiple option select elements values to array.
             return $this->update_item_valuesformat($record);
-
         } else {
             throw new \moodle_exception('error:smartmenusmenuitemnotfound', 'theme_boost_union');
         }
@@ -372,7 +486,7 @@ class smartmenu_item {
         // Seperate the customfields.
         $customfields = json_decode($itemdata->customfields) ?: [];
         foreach ($customfields as $field => $value) {
-            $itemdata->{'customfield_'.$field} = $value;
+            $itemdata->{'customfield_' . $field} = $value;
         }
 
         return $itemdata;
@@ -486,7 +600,6 @@ class smartmenu_item {
         $this->delete_cache();
 
         return true;
-
     }
 
     /**
@@ -576,7 +689,7 @@ class smartmenu_item {
             // Get the first file.
             $file = reset($files);
 
-            $url = \moodle_url::make_pluginfile_url(
+            $url = \core\url::make_pluginfile_url(
                 $file->get_contextid(),
                 $file->get_component(),
                 $file->get_filearea(),
@@ -588,6 +701,97 @@ class smartmenu_item {
         }
         $placeholderimage = $OUTPUT->get_generated_image_for_id($SITE->id);
         return $url ?? $placeholderimage;
+    }
+
+    /**
+     * Get the course display name based on the configured display field.
+     *
+     * @param \stdClass $record The course record.
+     * @return string The course name to display.
+     */
+    protected function get_course_displayname($record): string {
+        // Get the text count for shortening the course name if configured.
+        $textcount = (int) ($this->item->textcount ?? 0);
+
+        // Determine the display name based on the configured display field.
+        switch ($this->item->displayfield) {
+            case self::FIELD_SHORTNAME:
+                return $record->shortname;
+            case self::FIELD_FULLNAME_SHORTNAME:
+                $fullname = $textcount ? $this->shorten_words($record->fullname, $textcount) : $record->fullname;
+                return $fullname . ' (' . $record->shortname . ')';
+            case self::FIELD_SHORTNAME_FULLNAME:
+                $fullname = $textcount ? $this->shorten_words($record->fullname, $textcount) : $record->fullname;
+                return $record->shortname . ' (' . $fullname . ')';
+            case self::FIELD_CUSTOMFIELD:
+                return $this->get_course_customfield_value($record, (int) ($this->item->displayfieldcustomfield ?? 0));
+            case self::FIELD_FULLNAME_CUSTOMFIELD:
+                $customvalue = $this->get_course_customfield_value($record, (int) ($this->item->displayfieldcustomfield ?? 0));
+                $fullname = $textcount ? $this->shorten_words($record->fullname, $textcount) : $record->fullname;
+                return $customvalue !== '' ? $fullname . ' (' . $customvalue . ')' : $fullname;
+            case self::FIELD_SHORTNAME_CUSTOMFIELD:
+                $customvalue = $this->get_course_customfield_value($record, (int) ($this->item->displayfieldcustomfield ?? 0));
+                return $customvalue !== '' ? $record->shortname . ' (' . $customvalue . ')' : $record->shortname;
+            case self::FIELD_FULLNAME:
+            default:
+                return $textcount ? $this->shorten_words($record->fullname, $textcount) : $record->fullname;
+        }
+    }
+
+    /**
+     * Get the second line text for a course in the dynamic menu item.
+     *
+     * @param \stdClass $record The course record.
+     * @return string The second line text, or empty string if not configured.
+     */
+    protected function get_course_displaynamesecond($record): string {
+        // If the second display field is not configured, return an empty string.
+        if (
+            !isset($this->item->displayfieldsecond) || $this->item->displayfieldsecond === null
+                || $this->item->displayfieldsecond == self::FIELD_NONE
+        ) {
+            return '';
+        }
+
+        // Get the text count for shortening the second line text if configured.
+        $textcountsecond = (int) ($this->item->textcountsecond ?? 0);
+
+        // Determine the second line text based on the configured second display field.
+        switch ($this->item->displayfieldsecond) {
+            case self::FIELD_FULLNAME:
+                return $textcountsecond ? $this->shorten_words($record->fullname, $textcountsecond) : $record->fullname;
+            case self::FIELD_SHORTNAME:
+                return $record->shortname;
+            case self::FIELD_CUSTOMFIELD:
+                return $this->get_course_customfield_value($record, (int) ($this->item->displayfieldsecondcustomfield ?? 0));
+            default:
+                return '';
+        }
+    }
+
+    /**
+     * Get the custom field value for a course menu item.
+     *
+     * @param \stdClass $record The course record.
+     * @param int $fieldid The ID of the custom field to retrieve.
+     * @return string The custom field value, or empty string if not found.
+     */
+    protected function get_course_customfield_value($record, int $fieldid): string {
+        // If the custom field ID is not configured, return an empty string.
+        if (empty($fieldid)) {
+            return '';
+        }
+
+        // Fetch the custom field value for the course.
+        $handler = \core_customfield\handler::get_handler('core_course', 'course');
+        $customfields = $handler->get_instance_data($record->id);
+        foreach ($customfields as $data) {
+            if ($data->get_field()->get('id') == $fieldid) {
+                $value = $data->export_value();
+                return $value !== null ? (string) $value : '';
+            }
+        }
+        return '';
     }
 
     /**
@@ -625,20 +829,188 @@ class smartmenu_item {
     }
 
     /**
-     * Generate the item as static menu item, Send the custom URL to moodle_url to make this work with relative URL.
+     * Generate a heading item with placeholders replaced in the title.
      *
-     * @return string
+     * @return array The node data.
+     */
+    protected function generate_heading_with_placeholders(): array {
+        return $this->generate_node_data(
+            $this->replace_placeholders($this->item->title), // Title with placeholders replaced.
+            '#', // URL.
+            null, // Default key.
+            $this->item->tooltip, // Tooltip.
+            'heading'
+        );
+    }
+
+    /**
+     * Generate a node data for a divider item.
+     *
+     * @return array The node data.
+     */
+    protected function generate_divider() {
+        return $this->generate_node_data(
+            '', // Empty title (regardless of what's in the database).
+            '#', // URL.
+            null, // Default key.
+            '', // Empty tooltip (regardless of what's in the database).
+            'divider'
+        );
+    }
+
+    /**
+     * Generate the item as static menu item, Send the custom URL to core\url to make this work with relative URL.
+     *
+     * @return array The node data.
      */
     protected function generate_static_item() {
 
-        $staticurl = new \moodle_url($this->item->url);
+        $staticurl = new \core\url($this->item->url);
 
         return $this->generate_node_data(
             $this->item->title, // Title.
             $staticurl, // URL.
             null, // Default key.
             $this->item->tooltip,
-        // Tooltip.
+            // Tooltip.
+        );
+    }
+
+    /**
+     * Generate a static item with placeholders replaced in title and URL.
+     *
+     * @return array The node data.
+     */
+    protected function generate_static_item_with_placeholders(): array {
+
+        $staticurl = new \core\url($this->replace_placeholders($this->item->url));
+
+        return $this->generate_node_data(
+            $this->replace_placeholders($this->item->title), // Title with placeholders replaced.
+            $staticurl, // URL with placeholders replaced.
+            null, // Default key.
+            $this->item->tooltip,
+            // Tooltip.
+        );
+    }
+
+    /**
+     * Split a comma-separated list of email addresses (optional whitespace around commas).
+     *
+     * @param string|null $raw The raw comma-separated string of email addresses.
+     * @return string[] An array of trimmed email addresses, or an empty array if the input is null or empty.
+     */
+    public static function parse_mailto_address_list(?string $raw): array {
+        // If the input is null or empty, return an empty array.
+        if ($raw === null || trim($raw) === '') {
+            return [];
+        }
+
+        // Split the string by commas, allowing for optional whitespace around the commas.
+        $parts = preg_split('/\s*,\s*/', $raw, -1, PREG_SPLIT_NO_EMPTY);
+
+        // Trim each part and filter out any empty strings that may result from consecutive commas or leading/trailing commas.
+        $addresses = [];
+        foreach ($parts as $part) {
+            $trimmed = trim($part);
+            if ($trimmed !== '') {
+                $addresses[] = $trimmed;
+            }
+        }
+
+        // Return the array of email addresses.
+        return $addresses;
+    }
+
+    /**
+     * Check whether every address in the list is valid for Moodle.
+     *
+     * @param string[] $addresses The list of email addresses to validate.
+     * @return bool True if all addresses are valid, false otherwise.
+     */
+    public static function validate_mailto_address_list(array $addresses): bool {
+        // Validate each address using Moodle's validate_email function.
+        foreach ($addresses as $addr) {
+            // If any address is invalid, return false.
+            if (!validate_email($addr)) {
+                return false;
+            }
+        }
+
+        // If we get here, all addresses are valid.
+        return true;
+    }
+
+    /**
+     * Build a mailto: URL (RFC 6068) with percent-encoded subject, body, cc, and bcc header fields.
+     *
+     * @param string $to Comma-separated To addresses
+     * @param string|null $cc Comma-separated Cc addresses
+     * @param string|null $bcc Comma-separated Bcc addresses
+     * @param string|null $subject Plain subject (encoded when building the URL)
+     * @param string|null $body Plain body (encoded when building the URL)
+     * @return string
+     */
+    public static function build_mailto_href(
+        string $to,
+        ?string $cc = null,
+        ?string $bcc = null,
+        ?string $subject = null,
+        ?string $body = null
+    ): string {
+        // Build the to part.
+        $toaddrs = self::parse_mailto_address_list($to);
+        $topart = implode(',', $toaddrs);
+
+        // Build the query part with cc, bcc, subject and body.
+        $queryparts = [];
+        $ccaddrs = self::parse_mailto_address_list($cc);
+        if (!empty($ccaddrs)) {
+            $queryparts[] = 'cc=' . rawurlencode(implode(',', $ccaddrs));
+        }
+        $bccaddrs = self::parse_mailto_address_list($bcc);
+        if (!empty($bccaddrs)) {
+            $queryparts[] = 'bcc=' . rawurlencode(implode(',', $bccaddrs));
+        }
+        if ($subject !== null && $subject !== '') {
+            $queryparts[] = 'subject=' . rawurlencode($subject);
+        }
+        if ($body !== null && $body !== '') {
+            $queryparts[] = 'body=' . rawurlencode($body);
+        }
+
+        // Combine the to part and query part to build the mailto URL.
+        $mailto = 'mailto:' . $topart;
+        if (!empty($queryparts)) {
+            $mailto .= '?' . implode('&', $queryparts);
+        }
+
+        // Return the built mailto URL.
+        return $mailto;
+    }
+
+    /**
+     * Generate the item as mailto menu item.
+     *
+     * @return string
+     */
+    protected function generate_mailto_item() {
+
+        // Build the mailto link from the item data.
+        $mailto = self::build_mailto_href(
+            $this->item->email,
+            $this->item->email_cc ?? null,
+            $this->item->email_bcc ?? null,
+            $this->item->email_subject ?? null,
+            $this->item->email_body ?? null
+        );
+
+        return $this->generate_node_data(
+            $this->item->title, // Title.
+            $mailto, // Mailto link.
+            null, // Default key.
+            $this->item->tooltip,
+            // Tooltip.
         );
     }
 
@@ -657,10 +1029,11 @@ class smartmenu_item {
         if ($this->item->mode == self::MODE_SUBMENU && $this->menu->type == smartmenu::TYPE_CARD) {
             return [];
         }
+
         $query = (object) [
             'select' => ['c.*'],
             'join' => [],
-            'where' => ["c.visible > 0"],
+            'where' => [],
             'params' => [],
         ];
 
@@ -676,8 +1049,14 @@ class smartmenu_item {
         // Daterange based courses filter.
         $this->get_daterange_sql($query);
 
+        // Starred courses based courses filter.
+        $this->get_starredcourses_sql($query);
+
         // Custom field based courses filter.
         $this->get_customfield_sql($query);
+
+        // Visibility based courses filter.
+        $this->get_visibility_sql($query);
 
         // Build the queries.
         $select = implode(',', array_filter($query->select));
@@ -701,17 +1080,21 @@ class smartmenu_item {
             return [];
         }
 
+        $records = array_filter($records, [$this, 'filter_courses_list'], ARRAY_FILTER_USE_BOTH);
+
         $items = [];
         // Build the items data into nodes.
         foreach ($records as $record) {
-            $url = new \moodle_url('/course/view.php', ['id' => $record->id]);
-            $rkey = 'item-'.$this->item->id.'-dynamic-'.$record->id;
+            $itemclasses = []; // Additional classes for the item.
+            $tooltip = null; // Tooltip for the item.
+
+            $url = new \core\url('/course/view.php', ['id' => $record->id]);
+            $rkey = 'item-' . $this->item->id . '-dynamic-' . $record->id;
             // Get the course image from overview files.
             $itemimage = $this->get_course_image($record);
             // Generate the navigation node for this course and add the node to items list.
-            $coursename = ($this->item->displayfield == self::FIELD_SHORTNAME) ? $record->shortname : $record->fullname;
-            // Short the course text name. used custom end (2) dots instead of three dots to display more words from coursenames.
-            $coursename = ($this->item->textcount) ? $this->shorten_words($coursename, $this->item->textcount) : $coursename;
+            $coursename = $this->get_course_displayname($record);
+            $coursenamesecond = $this->get_course_displaynamesecond($record);
             // Store the string which should be used for sorting within the item.
             switch ($this->item->listsort) {
                 case self::LISTSORT_FULLNAME_ASC:
@@ -733,26 +1116,59 @@ class smartmenu_item {
                     break;
             }
 
-            $items[] = $this->generate_node_data($coursename, $url, $rkey, null, 'link', false, [], $itemimage, $sortstring);
+            $sortdata = [
+                'string' => format_string($sortstring),
+                'visibility' => $record->visible,
+            ];
+
+            if (!$record->visible) {
+                $itemclasses[] = 'dimmed';
+                $itemclasses[] = 'muted';
+                $tooltip = get_string('hiddenfromstudents');
+            }
+
+            $items[] = $this->generate_node_data(
+                $coursename,
+                $url,
+                $rkey,
+                $tooltip,
+                'link',
+                false,
+                [],
+                $itemimage,
+                $sortdata,
+                $itemclasses,
+                $coursenamesecond
+            );
         }
 
         // Sort the courses based on the configured setting.
         $listsort = $this->item->listsort;
-        usort($items, function($course1, $course2) use ($listsort) {
+        usort($items, function ($course1, $course2) use ($listsort) {
             switch ($listsort) {
                 case self::LISTSORT_FULLNAME_ASC:
                 case self::LISTSORT_SHORTNAME_ASC:
                 case self::LISTSORT_COURSEID_ASC:
                 case self::LISTSORT_COURSEIDNUMBER_ASC:
                 default:
-                    return strnatcasecmp($course1['sortstring'], $course2['sortstring']);
+                    return strnatcasecmp($course1['sortdata']['string'], $course2['sortdata']['string']);
                 case self::LISTSORT_FULLNAME_DESC:
                 case self::LISTSORT_SHORTNAME_DESC:
                 case self::LISTSORT_COURSEID_DESC:
                 case self::LISTSORT_COURSEIDNUMBER_DESC:
-                    return strnatcasecmp($course2['sortstring'], $course1['sortstring']);
+                    return strnatcasecmp($course2['sortdata']['string'], $course1['sortdata']['string']);
             }
         });
+
+        // Sort the course items by visibility.
+        if (
+            property_exists($this->item, 'hiddencoursesort') &&
+                $this->item->hiddencoursesort == self::HIDDENCOURSESORT_END
+        ) {
+            usort($items, function ($course1, $course2) {
+                return $course2['sortdata']['visibility'] <=> $course1['sortdata']['visibility'];
+            });
+        }
 
         // Submenu only contains the title as separate node.
         if ($this->item->mode == self::MODE_SUBMENU) {
@@ -772,6 +1188,90 @@ class smartmenu_item {
     }
 
     /**
+     * Generate the item object for a docs item. Use get_docs_url to get the link and generate the data.
+     *
+     * This logic function is copied and modified from page_doc_link() in /lib/classes/output/core_renderer.php
+     *
+     * @return array|null The node data or null if the docs are disabled or the user does not have moodle/site:doclinks capability.
+     */
+    protected function generate_docs_item() {
+        global $PAGE;
+
+        // Get the docs URL.
+        $path = page_get_doc_link_path($PAGE);
+
+        // If the path is empty, docs are either disabled or the user does not have the moodle/site:doclinks capability
+        // in the given context.
+        // In this case, return directly to avoid creating the node.
+        if (empty($path)) {
+            return null;
+        }
+
+        // Get the docs URL.
+        $docurl = get_docs_url($path);
+
+        // Generate and return the node.
+        return $this->generate_node_data(
+            $this->item->title,
+            $docurl,
+            null,
+            $this->item->tooltip,
+        );
+    }
+
+    /**
+     * Replace all supported placeholders in the given string with their current context values.
+     *
+     * Supported placeholders:
+     * - {courseid}        : The current course's internal ID.
+     * - {coursefullname}  : The current course's full name.
+     * - {courseshortname} : The current course's shortname.
+     * - {editingtoggle}   : 'on' or 'off', the value needed to toggle editing mode.
+     * - {userid}          : The logged-in user's internal ID.
+     * - {userusername}    : The logged-in user's username.
+     * - {userfullname}    : The logged-in user's full name.
+     * - {pagecontextid}   : The current page's context ID.
+     * - {pagepath}        : The current page's URL path.
+     * - {sesskey}         : The current session key (for use in secured URLs).
+     *
+     * @param string $text The text containing placeholders.
+     * @return string The text with all placeholders replaced by their current context values.
+     */
+    protected function replace_placeholders(string $text): string {
+        global $USER, $COURSE, $PAGE;
+
+        // Define the supported placeholders and their corresponding replacement values.
+        $placeholders = [
+            'courseid'        => isset($COURSE->id) ? $COURSE->id : '',
+            'coursefullname'  => isset($COURSE->fullname) ? format_string($COURSE->fullname) : '',
+            'courseshortname' => isset($COURSE->shortname) ? $COURSE->shortname : '',
+            'editingtoggle'   => $PAGE->user_is_editing() ? 'off' : 'on',
+            'userid'          => isset($USER->id) ? $USER->id : '',
+            'userusername'    => isset($USER->username) ? $USER->username : '',
+            'userfullname'    => isset($USER->id) ? fullname($USER) : '',
+            'pagecontextid'   => is_object($PAGE->context) ? $PAGE->context->id : '',
+            'pagepath'        => is_object($PAGE->url) ? $PAGE->url->out_as_local_url() : '',
+            'sesskey'         => sesskey(),
+        ];
+
+        // For Behat tests, use some fixed values to ensure deterministic test results.
+        if (defined('BEHAT_SITE_RUNNING')) {
+            $placeholders['courseid'] = '42';
+            $placeholders['userid'] = '3';
+            $placeholders['pagecontextid'] = '99';
+            $placeholders['sesskey'] = 'behat0000000000000000000000000000';
+        }
+
+        // Replace each placeholder in the text with its corresponding value.
+        foreach ($placeholders as $search => $replace) {
+            $text = str_replace('{' . $search . '}', $replace, $text);
+        }
+
+        // Return the text with placeholders replaced.
+        return $text;
+    }
+
+    /**
      * Given some text and an ideal length, this function truncates the text based on words count.
      *
      * @param string $text text to be shortened
@@ -782,7 +1282,7 @@ class smartmenu_item {
         if (str_word_count($text, 0) > $count) {
             $words = str_word_count($text, 2); // Find the position of last word.
             $positions = array_keys($words);
-            $text = trim(substr($text, 0, $positions[$count])).'..';
+            $text = trim(substr($text, 0, $positions[$count])) . '..';
         }
         return $text;
     }
@@ -801,7 +1301,7 @@ class smartmenu_item {
             return false;
         }
 
-        list($insql, $inparams) = $DB->get_in_or_equal($this->item->category, SQL_PARAMS_NAMED, 'cg');
+        [$insql, $inparams] = $DB->get_in_or_equal($this->item->category, SQL_PARAMS_NAMED, 'cg');
 
         // If subcategories should be included, we have to investigate the whole category sub-path.
         // Unfortunately, as there is no combination of IN and LIKE in SQL, we have to chain up a list of
@@ -813,13 +1313,13 @@ class smartmenu_item {
             // Build a LIKE clause for each selected category.
             $likesqlparts = [];
             foreach ($this->item->category as $subcat) {
-                $likesqlparts[] = $DB->sql_like('cc.path', ':pathcat'.$subcat);
-                $likeparams['pathcat'.$subcat] = '%/'.$subcat.'/%';
+                $likesqlparts[] = $DB->sql_like('cc.path', ':pathcat' . $subcat);
+                $likeparams['pathcat' . $subcat] = '%/' . $subcat . '/%';
             }
             $likesql = implode(' OR ', $likesqlparts);
 
             // Add the categories filter to the query.
-            $query->where[] = "c.category $insql OR $likesql";
+            $query->where[] = "(c.category $insql OR $likesql)";
             $query->params += $inparams;
             $query->params += $likeparams;
 
@@ -880,7 +1380,7 @@ class smartmenu_item {
         // Convert the selected completion status to insql.
         $list = [];
         foreach ($status as $condition) {
-            switch($condition) {
+            switch ($condition) {
                 case self::COMPLETION_INPROGRESS:
                     $list[] = 'inprogress';
                     break;
@@ -893,7 +1393,7 @@ class smartmenu_item {
             }
         }
 
-        list($insql, $inparam) = $DB->get_in_or_equal($list, SQL_PARAMS_NAMED, 'csts');
+        [$insql, $inparam] = $DB->get_in_or_equal($list, SQL_PARAMS_NAMED, 'csts');
 
         $sql = "SELECT ue.courseid FROM (
             SELECT
@@ -921,7 +1421,7 @@ class smartmenu_item {
      * @return bool Returns false if the item's date range is empty.
      */
     protected function get_daterange_sql(&$query) {
-        global $DB, $USER;
+        global $DB;
 
         if (empty($this->item->daterange)) {
             return false;
@@ -935,21 +1435,61 @@ class smartmenu_item {
             switch ($date) {
                 case self::RANGE_PAST:
                     $sql[] = "c.enddate <> 0 AND c.enddate < :now_$key";
-                    $params += ['now_'.$key => time()];
+                    $params += ['now_' . $key => time()];
                     break;
                 case self::RANGE_PRESENT:
-                    $sql[] = "(c.startdate < :startdate_$key AND ( c.enddate = 0 OR c.enddate > :enddate_$key) )";
-                    $params += ['enddate_'.$key => time(), 'startdate_'.$key => time()];
+                    $sql[] = "(c.startdate <= :startdate_$key AND ( c.enddate = 0 OR c.enddate > :enddate_$key) )";
+                    $params += ['enddate_' . $key => time(), 'startdate_' . $key => time()];
                     break;
                 case self::RANGE_FUTURE:
                     $sql[] = "c.startdate > :now_$key";
-                    $params += ['now_'.$key => time()];
+                    $params += ['now_' . $key => time()];
                     break;
             }
         }
 
-        $query->where[] = $sql ? '('.implode(' OR ', $sql).')' : '';
+        $query->where[] = $sql ? '(' . implode(' OR ', $sql) . ')' : '';
         $query->params += $params;
+    }
+
+    /**
+     * Generates the SQL statement to only show user-starred courses.
+     *
+     * @param stdclass $query The database query object.
+     * @return bool Returns false if the starred-courses filter is not enabled.
+     */
+    protected function get_starredcourses_sql(&$query) {
+        global $USER;
+
+        // Check if the filter for starred courses is enabled and valid.
+        if (
+            !property_exists($this->item, 'starredcourses') ||
+            !in_array((int) $this->item->starredcourses, [
+                self::STARREDCOURSES_ONLY_SERVER,
+                self::STARREDCOURSES_ONLY_CLIENT,
+            ])
+        ) {
+            return false;
+        }
+
+        // Add a condition to the query to fetch only those courses that the user has marked as favourite on the server side.
+        $query->where[] = "EXISTS (
+            SELECT 1
+              FROM {favourite} f
+              JOIN {context} favctx ON favctx.id = f.contextid
+             WHERE f.userid = :favuserid
+               AND f.component = :favcomponent
+               AND f.itemtype = :favitemtype
+               AND f.itemid = c.id
+               AND favctx.contextlevel = :favcontextlevel
+               AND favctx.instanceid = c.id
+        )";
+        $query->params += [
+            'favuserid' => $USER->id,
+            'favcomponent' => 'core_course',
+            'favitemtype' => 'courses',
+            'favcontextlevel' => CONTEXT_COURSE,
+        ];
     }
 
     /**
@@ -976,7 +1516,7 @@ class smartmenu_item {
             // Filter the null, autocomplete fields dont displayed the empty value, user cannot able to remove the null fields.
             // Therfore remove the 0 or empty values from condition values.
             if (is_array($value)) {
-                $value = array_filter($value, function($v) {
+                $value = array_filter($value, function ($v) {
                     return $v != 0;
                 });
             }
@@ -987,7 +1527,7 @@ class smartmenu_item {
 
             // Select from multiple values for a custom field.
             if (is_array($value)) {
-                list($insql, $inparams) = $DB->get_in_or_equal($value, SQL_PARAMS_NAMED, 'val_'.$i);
+                [$insql, $inparams] = $DB->get_in_or_equal($value, SQL_PARAMS_NAMED, 'val_' . $i);
                 $where = "cd.value $insql";
                 $params += $inparams;
             } else {
@@ -1007,6 +1547,44 @@ class smartmenu_item {
 
         $query->where[] = $sql ? implode(' AND ', $sql) : '';
         $query->params += $params;
+    }
+
+    /**
+     * Generates the SQL statement for the visibility condition.
+     *
+     * @param  stdclass $query The database query object.
+     * @return void
+     */
+    protected function get_visibility_sql(&$query) {
+
+        if (
+            property_exists($this->item, 'displayhiddencourses') &&
+                $this->item->displayhiddencourses == self::DISPLAY_VISIBLECOURSESONLY
+        ) {
+            // Add condition to fetch only visible courses.
+            $query->where[] = 'c.visible = 1';
+        }
+    }
+
+    /**
+     * Filters the course list by the capability to view hidden courses.
+     *
+     * @param stdclass $record The course record.
+     * @param int $courseid The ID of the course.
+     * @return bool True if the course should be included, false otherwise.
+     */
+    protected function filter_courses_list($record, $courseid) {
+
+        // Filter by course visibility.
+        if (
+            property_exists($this->item, 'displayhiddencourses') &&
+                $this->item->displayhiddencourses == self::DISPLAY_VISIBLECOURSESONLY
+        ) {
+            return true;
+        }
+
+        // Filter by course visibility or user capability to view hidden courses.
+        return $record->visible || has_capability('moodle/course:viewhiddencourses', context_course::instance($record->id));
     }
 
     /**
@@ -1042,8 +1620,12 @@ class smartmenu_item {
             return false;
         }
 
-        // Add custom css class.
+        // Add marker class to make clear that this is a Boost Union smart menu item.
+        $class[] = 'boost-union-smartmenuitem';
+
+        // Add custom CSS class.
         $class[] = $this->item->cssclass;
+
         // Add classes for hide items in specific viewport.
         $class[] = $this->item->desktop ? 'd-lg-none' : 'd-lg-inline-flex';
         $class[] = $this->item->tablet ? 'd-md-none' : 'd-md-inline-flex';
@@ -1051,40 +1633,99 @@ class smartmenu_item {
 
         // Add classes for item title placement on card.
         $class[] = $this->get_textposition_class();
-        // Menu item class.
-        $types = [self::TYPESTATIC => 'static', self::TYPEDYNAMIC => 'dynamic', self::TYPEHEADING => 'heading'];
-        $class[] = 'menu-item-'.($types[$this->item->type] ?? '');
+
+        // Add menu item class.
+        $types = [
+            self::TYPESTATIC => 'static',
+            self::TYPESTATICWITHPLACEHOLDERS => 'static',
+            self::TYPEDYNAMIC => 'dynamic',
+            self::TYPEMAILTO => 'mailto',
+            self::TYPEHEADING => 'heading',
+            self::TYPEHEADINGWITHPLACEHOLDERS => 'heading',
+            self::TYPEDOCS => 'docs',
+            self::TYPEDIVIDER => 'divider',
+        ];
+
+        $class[] = 'menu-item-' . ($types[$this->item->type] ?? '');
+
         // Add classes to item data.
         $this->item->classes = $class;
+
         // Load the location of menu, used to collect menus for locations in menu inline mode.
         $this->item->location = $this->menu->location;
 
         // Convert the item background color hexcode into rgba with opacity. Used in the overlay style.
         $this->convert_background_code();
 
-        switch ($this->item->type):
-
+        switch ($this->item->type) :
             case self::TYPESTATIC:
                 $static = $this->generate_static_item();
                 $result = [$static]; // Return the result as recursive array for merge with dynamic items.
-                $type = 'static';
+                $cacheable = true;
+                break;
+
+            case self::TYPESTATICWITHPLACEHOLDERS:
+                $static = $this->generate_static_item_with_placeholders();
+                $result = [$static];
+                // Must not be cached because title and URL contain user/course/page context dependent values.
+                $cacheable = false;
+                break;
+
+            case self::TYPEMAILTO:
+                $mailto = $this->generate_mailto_item();
+                $result = [$mailto];
+                $cacheable = true;
+                break;
+
+            case self::TYPEDOCS:
+                $docs = $this->generate_docs_item();
+
+                // If the returned node is null, return directly as we do not have a docs node to build.
+                if ($docs === null) {
+                    return false;
+                }
+
+                $result = [$docs]; // Return the result as recursive array useful to merge with dynamic items.
+
+                // Make this node non cacheable as its link will change throughout the individual Moodle pages.
+                $cacheable = false;
+
                 break;
 
             case self::TYPEDYNAMIC:
                 $result = $this->generate_dynamic_item();
-                $type = 'dynamic';
+                // If the starred courses server-side cache invalidation mode is enabled, disable the cache for dynamic items.
+                // And keep the cache for all other modes.
+                $cacheable = !(
+                    isset($this->item->starredcourses) &&
+                    (int) $this->item->starredcourses === self::STARREDCOURSES_ONLY_SERVER
+                );
+                break;
+
+            case self::TYPEDIVIDER:
+                $divider = $this->generate_divider();
+                $result = [$divider]; // Return the result as recursive array useful to merge with dynamic items.
+                $cacheable = true;
+                break;
+
+            case self::TYPEHEADINGWITHPLACEHOLDERS:
+                $heading = $this->generate_heading_with_placeholders();
+                $result = [$heading];
+                // Must not be cached because title contains user/course/page context dependent values.
+                $cacheable = false;
                 break;
 
             case self::TYPEHEADING:
             default:
                 $heading = $this->generate_heading();
                 $result = [$heading]; // Return the result as recursive array useful to merge with dynamic items.
-                $type = 'heading';
-
+                $cacheable = true;
         endswitch;
 
-        // Save the items cache.
-        $this->cache->set($cachekey, $result);
+        // If cachable save the items cache.
+        if ($cacheable) {
+            $this->cache->set($cachekey, $result);
+        }
 
         return $result;
     }
@@ -1110,26 +1751,60 @@ class smartmenu_item {
      * @param int $haschildren Whether the item has children or not, defaults to 0.
      * @param array $children An array of child nodes, defaults to an empty array.
      * @param string $itemimage Card image url for item.
-     * @param string $sortstring The string to be used for sorting the items.
+     * @param array $sortdata The string to be used for sorting the items.
+     * @param array $itemclasses List of additional css classes for the menu item node.
+     * @param string|null $secondline The second line text for the item, used for dynamic course menu items.
      *
      * @return array An associative array of node data for the item.
      */
-    public function generate_node_data($title, $url, $key = null, $tooltip = null,
-        $itemtype = 'link', $haschildren = 0, $children = [], $itemimage = '', $sortstring = '') {
+    public function generate_node_data(
+        $title,
+        $url,
+        $key = null,
+        $tooltip = null,
+        $itemtype = 'link',
+        $haschildren = 0,
+        $children = [],
+        $itemimage = '',
+        $sortdata = [],
+        $itemclasses = [],
+        $secondline = null
+    ) {
 
         global $OUTPUT;
 
-        $title = format_string($title);
+        // Format the title string.
+        $title = \html_writer::tag(
+            'span',
+            format_string($title),
+            ['class' => 'boost-union-smartmenu-firstline']
+        );
+
+        // Append the second line to the title if configured.
+        if (!empty($secondline)) {
+            $title .= \html_writer::tag(
+                'span',
+                format_string($secondline),
+                ['class' => 'boost-union-smartmenu-secondline small text-muted']
+            );
+        }
+
+        // Wrap the title in a wrapper (to allow it to be positioned in one piece near the icon).
+        $title = \html_writer::tag(
+            'div',
+            $title,
+            ['class' => 'd-flex flex-column']
+        );
+
         // Icon not shown in moodle 4.x, added the icon with text.
         if ($this->item->menuicon) {
             $icon = explode(':', $this->item->menuicon);
             $iconstr = isset($icon[1]) ? $icon[1] : 'moodle';
             $component = isset($icon[0]) ? $icon[0] : '';
             // Render the pix icon.
-            $icon = $OUTPUT->pix_icon($iconstr,  $this->item->title, $component);
+            $icon = $OUTPUT->pix_icon($iconstr, $this->item->title, $component);
 
             switch ($this->item->display) {
-
                 case self::DISPLAY_SHOWTITLEICON:
                     $title = $icon . $title;
                     break;
@@ -1142,17 +1817,35 @@ class smartmenu_item {
             }
         }
 
-        // Generate dynamic image for empty image cards.
-        if (empty($itemimage) && $this->menu->type == smartmenu::TYPE_CARD) {
-            $itemimage = $this->get_itemimage($this->item->id);
+        // Update the card type menus before create node.
+        if ($this->menu->type == smartmenu::TYPE_CARD) {
+            // Generate dynamic image for empty image cards.
+            if (empty($itemimage)) {
+                $itemimage = $this->get_itemimage($this->item->id);
+            }
+
+            // Use the menu title as image alt if image alt text not given.
+            $imagealt = $this->item->imagealt ?: $title;
+            // Update the image alt text if it contains placeholders.
+            if (strpos($imagealt, '{') !== false) {
+                $placeholders = ['menutitle' => $title];
+                foreach ($placeholders as $placeholder => $value) {
+                    $imagealt = str_replace('{' . $placeholder . '}', $value, $imagealt);
+                }
+            }
+            $imagealt = format_string($imagealt);
         }
 
+        // Include the additional item classes.
+        $itemdata = clone($this->item);
+        $itemdata->classes = array_merge($this->item->classes, $itemclasses);
+
         $data = [
-            'itemdata' => $this->item,
-            'menuclasses' => $this->item->classes, // If menu is inline, need to add the item custom class in dropdown.
+            'itemdata' => $itemdata,
+            'menuclasses' => $itemdata->classes, // If menu is inline, need to add the item custom class in dropdown.
             'location' => $this->menu->location,
             'url' => $url ?: 'javascript:void(0)',
-            'key' => $key != null ? $key : 'item-'.$this->item->id,
+            'key' => $key != null ? $key : 'item-' . $this->item->id,
             'text' => $title,
             // Do not set the title attribute as this would show a standard tooltip based on the Moodle core custom menu logic.
             'title' => '',
@@ -1162,7 +1855,11 @@ class smartmenu_item {
             'itemtype' => 'link',
             'link' => 1,
             'sort' => uniqid(), // Support third level menu.
-            'sortstring' => format_string($sortstring),
+            'sortdata' => $sortdata,
+            'imagealt' => $imagealt ?? $title,
+            'desktop' => $this->item->desktop,
+            'tablet' => $this->item->tablet,
+            'mobile' => $this->item->mobile,
         ];
 
         if ($haschildren && !empty($children)) {
@@ -1176,10 +1873,10 @@ class smartmenu_item {
             ], ];
         }
 
-        if (preg_match("/^#+$/", format_string($title))) {
-            // In main menu divider is separate property.
-            // For lang menu divider is mentioned in itemtype.
-            // Updated the item type in the build_user_menu in primary navigation class method.
+        // If the type is divider or if the title is a series of '#' characters, mark it as a divider.
+        // The series of '#' characters is just a fallback support dividers as they were created before #453 although these should
+        // not exist anymore after this patch.
+        if ($itemtype == 'divider' || preg_match("/^#+$/", format_string($title))) {
             $data['divider'] = true;
         }
         return $data;
@@ -1195,7 +1892,7 @@ class smartmenu_item {
             case self::POSITION_OVERLAYBOTTOM:
                 $class = 'card-text-overlay-bottom';
                 break;
-            case self::POSITION_OVERLAYTOP;
+            case self::POSITION_OVERLAYTOP:
                 $class = 'card-text-overlay-top';
                 break;
             default:
@@ -1257,7 +1954,18 @@ class smartmenu_item {
             if (isset($data[$fieldid])) {
                 $data = $data[$fieldid];
                 $data->instance_form_definition($mform);
-                $elem = $mform->getElement("customfield_".$shortname);
+
+                // Check if the element was actually added to the form.
+                // When a custom field is not visible in course settings, it won't be added.
+                // In this case, getElement() returns a PEAR_Error instead of a form element.
+                // This happened before with the customfield_semester | visibleincoursesettings setting
+                // of customfield_semester.
+                // See https://github.com/moodle-an-hochschulen/moodle-theme_boost_union/issues/1164 for details.
+                if (!$mform->elementExists("customfield_" . $shortname)) {
+                    continue;
+                }
+
+                $elem = $mform->getElement("customfield_" . $shortname);
                 // If this field is a textarea, we'll remove the element and re-add
                 // it in a group as textareas can't be conditionally hidden due to a limitation in Moodle core.
                 if ($istextarea) {
@@ -1265,18 +1973,18 @@ class smartmenu_item {
                     $mform->addGroup([$elem], "group_customfield_" . $shortname, $elem->getLabel());
                 }
                 // Remove the rules for custom fields.
-                if (isset($mform->_rules["customfield_".$shortname])) {
-                    unset($mform->_rules["customfield_".$shortname]);
+                if (isset($mform->_rules["customfield_" . $shortname])) {
+                    unset($mform->_rules["customfield_" . $shortname]);
                 }
                 // Remove the custom fields from required sections.
-                if (($key = array_search("customfield_".$shortname, $mform->_required)) !== false) {
+                if (($key = array_search("customfield_" . $shortname, $mform->_required)) !== false) {
                     unset($mform->_required[$key]);
                 }
                 // By default, ensure that no values are pre-set in the form as defaults.
-                $default = (isset($mform->_types["customfield_".$shortname])
-                    && $mform->_types["customfield_".$shortname]) == 'int' ? 0 : '';
+                $default = (isset($mform->_types["customfield_" . $shortname])
+                    && $mform->_types["customfield_" . $shortname]) == 'int' ? 0 : '';
 
-                $mform->setDefault("customfield_".$shortname, $default);
+                $mform->setDefault("customfield_" . $shortname, $default);
                 // Change the password fields type to text, then admin can view the password field as text field.
                 if ($elem->_type == 'password') {
                     $elem->_type = 'text';
@@ -1285,7 +1993,7 @@ class smartmenu_item {
                 // Make the select fields to select multiple.
                 if ("select" == $field->get('type') || "semester" == $field->get('type')) {
                     $elem->setMultiple(true);
-                    $mform->setDefault("customfield_".$shortname, 0);
+                    $mform->setDefault("customfield_" . $shortname, 0);
                 }
 
                 // Hide the field if needed (and distinguish between textareas and other fields here as explained above).
@@ -1303,7 +2011,7 @@ class smartmenu_item {
             // Fetch no-selection string.
             Str.get_string("noselection", "form").then((noSelection) => {
                 dropdowns.forEach((elem) => {
-                    elem.classList.add("custom-select");
+                    elem.classList.add("form-select");
                     // Change the field type to autcomplete, it fix the suggestion box alignment.
                     elem.parentNode.setAttribute("data-fieldtype", "autocomplete");
                     Auto.enhance(elem, "", false, "", false, true, noSelection);
@@ -1321,28 +2029,214 @@ class smartmenu_item {
     public static function get_types(?int $type = null) {
         $types = [
                 self::TYPESTATIC => get_string('smartmenusmenuitemtypestatic', 'theme_boost_union'),
+                self::TYPESTATICWITHPLACEHOLDERS =>
+                        get_string('smartmenusmenuitemtypestaticwithplaceholders', 'theme_boost_union'),
+                self::TYPEMAILTO => get_string('smartmenusmenuitemtypemailto', 'theme_boost_union'),
                 self::TYPEHEADING => get_string('smartmenusmenuitemtypeheading', 'theme_boost_union'),
+                self::TYPEHEADINGWITHPLACEHOLDERS =>
+                        get_string('smartmenusmenuitemtypeheadingwithplaceholders', 'theme_boost_union'),
+                self::TYPEDOCS => get_string('smartmenusmenuitemtypedocs', 'theme_boost_union'),
                 self::TYPEDYNAMIC => get_string('smartmenusmenuitemtypedynamiccourses', 'theme_boost_union'),
+                self::TYPEDIVIDER => get_string('smartmenusmenuitemtypedivider', 'theme_boost_union'),
         ];
 
         return ($type !== null && isset($types[$type])) ? $types[$type] : $types;
     }
 
     /**
-     * Returns the display options for the menu items.
+     * Return the options for the display setting.
      *
-     * @param int|null $option The display option to retrieve. If null, returns all display options.
-     * @return array|string The array of display options if $option is null, or the display option string if $option is set.
-     * @throws coding_exception if $option is set but invalid.
+     * @return array
+     * @throws \coding_exception
      */
-    public static function get_display_options(?int $option = null) {
-        $displayoptions = [
-                self::DISPLAY_SHOWTITLEICON => get_string('smartmenusmenuitemdisplayoptionsshowtitleicon', 'theme_boost_union'),
-                self::DISPLAY_HIDETITLE => get_string('smartmenushidetitle', 'theme_boost_union'),
-                self::DISPLAY_HIDETITLEMOBILE => get_string('smartmenushidetitlemobile', 'theme_boost_union'),
+    public static function get_display_options() {
+        return [
+            self::DISPLAY_SHOWTITLEICON => get_string('smartmenusmenuitemdisplayoptionsshowtitleicon', 'theme_boost_union'),
+            self::DISPLAY_HIDETITLE => get_string('smartmenusmenuitemdisplayoptionshidetitle', 'theme_boost_union'),
+            self::DISPLAY_HIDETITLEMOBILE => get_string('smartmenusmenuitemdisplayoptionshidetitlemobile', 'theme_boost_union'),
         ];
+    }
 
-        return ($option !== null && isset($displayoptions[$option])) ? $displayoptions[$option] : $displayoptions;
+    /**
+     * Return the options for the target setting.
+     *
+     * @return array
+     * @throws \coding_exception
+     */
+    public static function get_target_options(): array {
+        return [
+            self::TARGET_SAME => get_string('smartmenusmenuitemlinktargetsamewindow', 'theme_boost_union'),
+            self::TARGET_NEW => get_string('smartmenusmenuitemlinktargetnewtab', 'theme_boost_union'),
+        ];
+    }
+
+    /**
+     * Return the options for the completionstatus setting.
+     *
+     * @return array
+     * @throws \coding_exception
+     */
+    public static function get_completionstatus_options(): array {
+        return [
+            self::COMPLETION_ENROLLED =>
+                get_string('smartmenusdynamiccoursescompletionstatusenrolled', 'theme_boost_union'),
+            self::COMPLETION_INPROGRESS =>
+                get_string('smartmenusdynamiccoursescompletionstatusinprogress', 'theme_boost_union'),
+            self::COMPLETION_COMPLETED =>
+                get_string('smartmenusdynamiccoursescompletionstatuscompleted', 'theme_boost_union'),
+        ];
+    }
+
+    /**
+     * Return the options for the daterange setting.
+     *
+     * @return array
+     * @throws \coding_exception
+     */
+    public static function get_daterange_options(): array {
+        return [
+            self::RANGE_PAST =>
+                get_string('smartmenusdynamiccoursesdaterangepast', 'theme_boost_union'),
+            self::RANGE_PRESENT =>
+                get_string('smartmenusdynamiccoursesdaterangepresent', 'theme_boost_union'),
+            self::RANGE_FUTURE =>
+                get_string('smartmenusdynamiccoursesdaterangefuture', 'theme_boost_union'),
+        ];
+    }
+
+    /**
+     * Return the options for the starredcourses setting.
+     *
+     * @return array
+     * @throws \coding_exception
+     */
+    public static function get_starredcourses_options(): array {
+        return [
+            self::STARREDCOURSES_ALL =>
+                get_string('smartmenusdynamiccoursesstarredcoursesall', 'theme_boost_union'),
+            self::STARREDCOURSES_ONLY_SERVER =>
+                get_string('smartmenusdynamiccoursesstarredcoursesonly', 'theme_boost_union'),
+            self::STARREDCOURSES_ONLY_CLIENT =>
+                get_string('smartmenusdynamiccoursesstarredcoursesonlyclient', 'theme_boost_union'),
+        ];
+    }
+
+    /**
+     * Return the options for the listsort setting.
+     *
+     * @return array
+     * @throws \coding_exception
+     */
+    public static function get_listsort_options(): array {
+        return [
+            self::LISTSORT_FULLNAME_ASC =>
+                get_string('smartmenusmenuitemlistsortfullnameasc', 'theme_boost_union'),
+            self::LISTSORT_FULLNAME_DESC =>
+                get_string('smartmenusmenuitemlistsortfullnamedesc', 'theme_boost_union'),
+            self::LISTSORT_SHORTNAME_ASC =>
+                get_string('smartmenusmenuitemlistsortshortnameasc', 'theme_boost_union'),
+            self::LISTSORT_SHORTNAME_DESC =>
+                get_string('smartmenusmenuitemlistsortshortnamedesc', 'theme_boost_union'),
+            self::LISTSORT_COURSEID_ASC =>
+                get_string('smartmenusmenuitemlistsortcourseidasc', 'theme_boost_union'),
+            self::LISTSORT_COURSEID_DESC =>
+                get_string('smartmenusmenuitemlistsortcourseiddesc', 'theme_boost_union'),
+            self::LISTSORT_COURSEIDNUMBER_ASC =>
+                get_string('smartmenusmenuitemlistsortcourseidnumberasc', 'theme_boost_union'),
+            self::LISTSORT_COURSEIDNUMBER_DESC =>
+                get_string('smartmenusmenuitemlistsortcourseidnumberdesc', 'theme_boost_union'),
+        ];
+    }
+
+    /**
+     * Return the options for the displayfield setting.
+     *
+     * @return array
+     * @throws \coding_exception
+     */
+    public static function get_displayfield_options(): array {
+        return [
+            self::FIELD_FULLNAME => get_string('smartmenusmenuitemdisplayfieldcoursefullname', 'theme_boost_union'),
+            self::FIELD_SHORTNAME => get_string('smartmenusmenuitemdisplayfieldcourseshortname', 'theme_boost_union'),
+            self::FIELD_CUSTOMFIELD => get_string('smartmenusmenuitemdisplayfieldcustomfield', 'theme_boost_union'),
+            self::FIELD_FULLNAME_SHORTNAME => get_string('smartmenusmenuitemdisplayfieldfullnameshortname', 'theme_boost_union'),
+            self::FIELD_SHORTNAME_FULLNAME => get_string('smartmenusmenuitemdisplayfieldshortnamefullname', 'theme_boost_union'),
+            self::FIELD_FULLNAME_CUSTOMFIELD =>
+                    get_string('smartmenusmenuitemdisplayfieldfullnamecustomfield', 'theme_boost_union'),
+            self::FIELD_SHORTNAME_CUSTOMFIELD =>
+                    get_string('smartmenusmenuitemdisplayfieldshortnamecustomfield', 'theme_boost_union'),
+        ];
+    }
+
+    /**
+     * Return the options for the second line setting.
+     *
+     * @return array
+     * @throws \coding_exception
+     */
+    public static function get_displayfieldsecond_options(): array {
+        return [
+            self::FIELD_NONE => get_string('smartmenusmenuitemdisplayfieldsecondnone', 'theme_boost_union'),
+            self::FIELD_FULLNAME => get_string('smartmenusmenuitemdisplayfieldcoursefullname', 'theme_boost_union'),
+            self::FIELD_SHORTNAME => get_string('smartmenusmenuitemdisplayfieldcourseshortname', 'theme_boost_union'),
+            self::FIELD_CUSTOMFIELD => get_string('smartmenusmenuitemdisplayfieldcustomfield', 'theme_boost_union'),
+        ];
+    }
+
+    /**
+     * Get the available course custom fields as options for the second line selector.
+     *
+     * @return array The options array with id => name.
+     */
+    public static function get_customfield_options(): array {
+        $options = [0 => get_string('choosedots')];
+        $handler = \core_customfield\handler::get_handler('core_course', 'course');
+        foreach ($handler->get_fields() as $field) {
+            $options[$field->get('id')] = $field->get('name');
+        }
+        return $options;
+    }
+
+    /**
+     * Return the options for the mode setting.
+     *
+     * @return array
+     * @throws \coding_exception
+     */
+    public static function get_mode_options(): array {
+        return [
+            self::MODE_INLINE => get_string('smartmenusmodeinline', 'theme_boost_union'),
+            self::MODE_SUBMENU => get_string('smartmenusmodesubmenu', 'theme_boost_union'),
+        ];
+    }
+
+    /**
+     * Return the options for the testposition setting.
+     *
+     * @return array
+     * @throws \coding_exception
+     */
+    public static function get_textposition_options(): array {
+        return [
+            self::POSITION_BELOW =>
+                get_string('smartmenusmenuitemtextpositionbelowimage', 'theme_boost_union'),
+            self::POSITION_OVERLAYTOP =>
+                get_string('smartmenusmenuitemtextpositionoverlaytop', 'theme_boost_union'),
+            self::POSITION_OVERLAYBOTTOM =>
+                get_string('smartmenusmenuitemtextpositionoverlaybottom', 'theme_boost_union'),
+        ];
+    }
+
+    /**
+     * Return the options for the hidden courses sorting setting.
+     *
+     * @return array
+     */
+    public static function get_hiddencoursesorting_options() {
+        return [
+            self::HIDDENCOURSESORT_TOGETHER => get_string('smartmenusmenuitemhiddencoursesortingtogether', 'theme_boost_union'),
+            self::HIDDENCOURSESORT_END => get_string('smartmenusmenuitemhiddencoursesortingend', 'theme_boost_union'),
+        ];
     }
 
     /**
@@ -1361,17 +2255,29 @@ class smartmenu_item {
 
         $record = $formdata;
 
+        // Do not persist mailto-only fields for other menu item types.
+        // While the values should be stored as null by default for other types as well,
+        // this is a measure to ensure that no mailto values are stored for other types in any case..
+        if ($record->type != self::TYPEMAILTO) {
+            $record->email = null;
+            $record->email_cc = null;
+            $record->email_bcc = null;
+            $record->email_subject = null;
+            $record->email_body = null;
+        }
+
         // Convert the multiple valueable item types to JSON.
         $record->category = json_encode($formdata->category);
         $record->enrolmentrole = json_encode($formdata->enrolmentrole);
         $record->completionstatus = json_encode($formdata->completionstatus);
         $record->daterange = json_encode($formdata->daterange);
+        $record->starredcourses = ($formdata->starredcourses) ?? self::STARREDCOURSES_ALL;
 
         $coursehandler = \core_course\customfield\course_handler::create();
         $customfields = [];
         foreach ($coursehandler->get_fields() as $field) {
             $shortname = $field->get('shortname');
-            $customfields[$shortname] = $record->{'customfield_'.$shortname} ?? '';
+            $customfields[$shortname] = $record->{'customfield_' . $shortname} ?? '';
         }
         $record->customfields = json_encode($customfields);
 
@@ -1413,8 +2319,14 @@ class smartmenu_item {
                 ]);
             }
 
+            // Reset the fontawesome mapping cache if an icon was newly set or changed.
+            if (!empty($record->menuicon) && $oldrecord->menuicon != $record->menuicon) {
+                theme_boost_union_reset_fontawesome_icon_map();
+            }
+
             // Delete the cached data of its menu. Menu will recreate with this item.
             $menucache->delete_menu($formdata->menu);
+            smartmenu::invalidate_shared_cache($menucache);
             // Purge the current item cache for all users.
             $cache->delete_menu($formdata->id);
 
@@ -1432,8 +2344,14 @@ class smartmenu_item {
             // Show the menu item inserted success notification.
             \core\notification::success(get_string('smartmenusmenuitemcreatesuccess', 'theme_boost_union'));
 
+            // Reset the fontawesome mapping cache if an icon was set.
+            if (!empty($record->menuicon)) {
+                theme_boost_union_reset_fontawesome_icon_map();
+            }
+
             // Delete the cached data of its menu. Menu will recreate with this item.
             $menucache->delete_menu($formdata->menu);
+            smartmenu::invalidate_shared_cache($menucache);
         }
 
         // Save the item image files to the file directory.
@@ -1468,4 +2386,38 @@ class smartmenu_item {
         ];
     }
 
+    /**
+     * Get a list of all icons which are currently set in the menu items.
+     *
+     * @return array An array of icon names.
+     */
+    public static function get_all_fa_icons() {
+        global $DB;
+
+        // Check if the menuitems table exists before trying to query it.
+        // This prevents errors during upgrades from versions where this table does not exist yet.
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('theme_boost_union_menuitems');
+        if (!$dbman->table_exists($table)) {
+            // If table doesn't exist, return empty array.
+            return [];
+        }
+
+        // Define the query to search for icons in the menu items table.
+        $sql = "SELECT DISTINCT menuicon
+                FROM {theme_boost_union_menuitems}
+                WHERE menuicon IS NOT NULL AND menuicon != '0'";
+
+        // Get the icons from the database.
+        $icons = $DB->get_fieldset_sql($sql);
+
+        // Drop non-FA icons.
+        $icons = array_filter($icons, function ($icon) {
+            // Check if the icon is a Font Awesome icon.
+            return (strpos($icon, 'theme_boost_union:fa-') === 0);
+        });
+
+        // Return.
+        return $icons;
+    }
 }

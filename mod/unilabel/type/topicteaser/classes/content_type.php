@@ -451,8 +451,11 @@ class content_type extends \mod_unilabel\content_type {
     public function get_sections_from_course($courseid) {
         global $DB;
 
-        $params = ['course' => $courseid, 'visible' => 1];
-        if (!$sectionsrecords = $DB->get_records('course_sections', $params, 'section')) {
+        $params = ['courseid' => $courseid, 'visible' => 1];
+        $select = 'course = :courseid AND
+                   visible = :visible AND
+                   component IS NULL';
+        if (!$sectionsrecords = $DB->get_records_select('course_sections', $select, $params, 'section')) {
             return [];
         }
 
@@ -510,10 +513,14 @@ class content_type extends \mod_unilabel\content_type {
             $section->viewurl = $courseformat->get_view_url($s->section);
 
             $context     = \context_course::instance($s->course);
-            $summarytext = file_rewrite_pluginfile_urls($s->summary, 'pluginfile.php',
+            $summarytext = file_rewrite_pluginfile_urls(
+                $s->summary,
+                'pluginfile.php',
                 $context->id,
                 'unilabeltype_topicteaser',
-                'section', $s->id);
+                'section',
+                $s->id
+            );
 
             $options              = new \stdClass();
             $options->noclean     = true;

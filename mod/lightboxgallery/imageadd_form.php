@@ -16,9 +16,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once(dirname(__FILE__).'/locallib.php');
-require_once($CFG->libdir.'/formslib.php');
-require_once(dirname(__FILE__).'/imageclass.php');
+require_once(dirname(__FILE__) . '/locallib.php');
+require_once($CFG->libdir . '/formslib.php');
+require_once(dirname(__FILE__) . '/imageclass.php');
 
 /**
  * Prints a particular instance of lightboxgallery
@@ -29,7 +29,12 @@ require_once(dirname(__FILE__).'/imageclass.php');
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_lightboxgallery_imageadd_form extends moodleform {
-
+    /**
+     * Form definition.
+     *
+     * @return void
+     * @throws coding_exception
+     */
     public function definition() {
 
         global $COURSE, $cm;
@@ -40,7 +45,7 @@ class mod_lightboxgallery_imageadd_form extends moodleform {
 
         // We want to accept SVG, but not SVGZ. Using web_image has the UI say both are accepted.
         // Using optimised_image excludes .svg and also has text referring to badges and optimisation that
-        // aren't really relevant to what we're doing. So, we just explicitly say the ones we accept:
+        // aren't really relevant to what we're doing. So, we just explicitly say the ones we accept.
         $acceptedtypes = [
             'application/zip',
             '.svg',
@@ -48,15 +53,24 @@ class mod_lightboxgallery_imageadd_form extends moodleform {
             'image/jpeg',
             'image/png',
         ];
-        $mform->addElement('filemanager', 'image', get_string('file'), '0',
-                           array('maxbytes' => $COURSE->maxbytes, 'accepted_types' => $acceptedtypes));
+        $mform->addElement(
+            'filemanager',
+            'image',
+            get_string('file'),
+            '0',
+            ['maxbytes' => $COURSE->maxbytes, 'accepted_types' => $acceptedtypes]
+        );
         $mform->addRule('image', get_string('required'), 'required', null, 'client');
         $mform->addHelpButton('image', 'addimage', 'lightboxgallery');
 
         if ($this->can_resize()) {
-            $resizegroup = array();
-            $resizegroup[] = &$mform->createElement('select', 'resize', get_string('edit_resize', 'lightboxgallery'),
-                                                    lightboxgallery_resize_options());
+            $resizegroup = [];
+            $resizegroup[] = &$mform->createElement(
+                'select',
+                'resize',
+                get_string('edit_resize', 'lightboxgallery'),
+                lightboxgallery_resize_options()
+            );
             $resizegroup[] = &$mform->createElement('checkbox', 'resizedisabled', null, get_string('disable'));
             $mform->setType('resize', PARAM_INT);
             $mform->addGroup($resizegroup, 'resizegroup', get_string('edit_resize', 'lightboxgallery'), ' ', false);
@@ -69,9 +83,16 @@ class mod_lightboxgallery_imageadd_form extends moodleform {
         $mform->setType('id', PARAM_INT);
 
         $this->add_action_buttons(true, get_string('addimage', 'lightboxgallery'));
-
     }
 
+    /**
+     * Set default values for the form.
+     *
+     * @param stdClass $data
+     * @param array $files
+     * @return array
+     * @throws coding_exception
+     */
     public function validation($data, $files) {
         global $USER;
 
@@ -100,9 +121,13 @@ class mod_lightboxgallery_imageadd_form extends moodleform {
         return $errors;
     }
 
-
+    /**
+     * Check if we can resize the image.
+     *
+     * @return bool
+     */
     private function can_resize() {
         $gallery = $this->_customdata['gallery'];
-        return !in_array($gallery->autoresize, array(AUTO_RESIZE_UPLOAD, AUTO_RESIZE_BOTH));
+        return !in_array($gallery->autoresize, [AUTO_RESIZE_UPLOAD, AUTO_RESIZE_BOTH]);
     }
 }

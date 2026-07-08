@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
 /**
  * Completion Progress block definition
  *
@@ -25,6 +24,7 @@
 
 use block_completion_progress\completion_progress;
 use block_completion_progress\defaults;
+use block_completion_progress\helpers;
 
 /**
  * Completion Progress block class
@@ -33,7 +33,6 @@ use block_completion_progress\defaults;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class block_completion_progress extends block_base {
-
     /**
      * Sets the block title
      *
@@ -76,7 +75,7 @@ class block_completion_progress extends block_base {
      * @return bool
      */
     public function instance_allow_multiple() {
-        return !self::on_site_page($this->page);
+        return !helpers::on_site_page($this->page);
     }
 
     /**
@@ -85,7 +84,16 @@ class block_completion_progress extends block_base {
      * @return bool
      */
     public function instance_allow_config() {
-        return !self::on_site_page($this->page);
+        return !helpers::on_site_page($this->page);
+    }
+
+    /**
+     * Clean up cached percentages.
+     */
+    public function instance_delete() {
+        global $DB;
+        $DB->delete_records('block_completion_progress', ['blockinstanceid' => $this->instance->id]);
+        return parent::instance_delete();
     }
 
     /**
@@ -103,6 +111,16 @@ class block_completion_progress extends block_base {
     }
 
     /**
+     * Initialise JS.
+     */
+    public function get_required_javascript() {
+        parent::get_required_javascript();
+        if ($this->page->requires->should_create_one_time_item_now('block_completion_progress')) {
+            $this->page->requires->js_call_amd('block_completion_progress/progressbar', 'init');
+        }
+    }
+
+    /**
      * Creates the blocks main content
      *
      * @return string
@@ -112,33 +130,28 @@ class block_completion_progress extends block_base {
         if ($this->content !== null) {
             return $this->content;
         }
-        $this->content = new stdClass;
+        $this->content = new stdClass();
         $this->content->text = '';
         $this->content->footer = '';
-        $barinstances = [];
 
         // Guests do not have any progress. Don't show them the block.
         if (!isloggedin() || isguestuser()) {
             return $this->content;
         }
 
-        if (self::on_site_page($this->page)) {
+        if (helpers::on_site_page($this->page)) {
             // Draw the multi-bar content for the Dashboard and Front page.
-            if (!$this->prepare_dashboard_content($barinstances)) {
+            if (!$this->prepare_dashboard_content()) {
                 return $this->content;
             }
-
         } else {
             // Gather content for block on regular course.
-            if (!$this->prepare_course_content($barinstances)) {
+            if (!$this->prepare_course_content()) {
                 return $this->content;
             }
         }
 
         // Organise access to JS.
-        $this->page->requires->js_call_amd('block_completion_progress/progressbar', 'init', [
-            'instances' => $barinstances,
-        ]);
         $cachevalue = debugging('', DEBUG_DEVELOPER) ? -1 : (int)get_config('block_completion_progress', 'cachevalue');
         $this->page->requires->css('/blocks/completion_progress/css.php?v=' . $cachevalue);
 
@@ -147,10 +160,9 @@ class block_completion_progress extends block_base {
 
     /**
      * Produce content for the Dashboard or Front page.
-     * @param array $barinstances receives block instance ids
      * @return boolean false if an early exit
      */
-    protected function prepare_dashboard_content(&$barinstances) {
+    protected function prepare_dashboard_content() {
         global $USER, $CFG, $DB;
 
         $output = $this->page->get_renderer('block_completion_progress');
@@ -174,7 +186,7 @@ class block_completion_progress extends block_base {
                        bi.configdata
                   FROM {block_instances} bi
              LEFT JOIN {block_positions} bp ON bp.blockinstanceid = bi.id
-                                           AND ".$DB->sql_like('bp.pagetype', ':pagetype', false)."
+                           AND {$DB->sql_like('bp.pagetype', ':pagetype', false)}
                  WHERE bi.blockname = 'completion_progress'
                    AND bi.parentcontextid = :contextid
               ORDER BY COALESCE(bp.region, bi.defaultregion),
@@ -196,19 +208,22 @@ class block_completion_progress extends block_base {
                 $blockprogress = (clone $courseprogress)->for_block_instance($birec);
                 $blockinstance = $blockprogress->get_block_instance();
                 $blockconfig = $blockprogress->get_block_config();
-                if (!has_capability('block/completion_progress:showbar', context_block::instance($blockinstance->id)) ||
-                        !$blockinstance->visible ||
-                        !$blockprogress->has_visible_activities()) {
+                if (
+                    !has_capability('block/completion_progress:showbar', context_block::instance($blockinstance->id)) ||
+                    !$blockinstance->visible ||
+                    !$blockprogress->has_visible_activities()
+                ) {
                     continue;
                 }
-                if (!empty($blockconfig->group) &&
-                        !has_capability('moodle/site:accessallgroups', $courseprogress->get_context()) &&
-                        !$this->check_group_membership($blockconfig->group, $course->id)) {
+                if (
+                    !empty($blockconfig->group) &&
+                    !has_capability('moodle/site:accessallgroups', $courseprogress->get_context()) &&
+                    !$this->check_group_membership($blockconfig->group, $course->id)
+                ) {
                     continue;
                 }
 
                 $blockprogresses[$blockinstance->id] = $blockprogress;
-                $barinstances[] = $blockinstance->id;
             }
 
             // Output the Progress Bar.
@@ -237,10 +252,9 @@ class block_completion_progress extends block_base {
 
     /**
      * Produce content for a course page.
-     * @param array $barinstances receives block instance ids
      * @return boolean false if an early exit
      */
-    protected function prepare_course_content(&$barinstances) {
+    protected function prepare_course_content() {
         global $USER, $COURSE, $CFG, $OUTPUT;
 
         $output = $this->page->get_renderer('block_completion_progress');
@@ -286,7 +300,6 @@ class block_completion_progress extends block_base {
         if (has_capability('block/completion_progress:showbar', $this->context)) {
             $this->content->text .= $output->render($progress);
         }
-        $barinstances = [$this->instance->id];
 
         // Allow teachers to access the overview page.
         if (has_capability('block/completion_progress:overview', $this->context)) {
@@ -298,14 +311,6 @@ class block_completion_progress extends block_base {
         }
 
         return true;
-    }
-
-    /**
-     * Bumps a value to assist in caching of configured colours in css.php.
-     */
-    public static function increment_cache_value() {
-        $value = get_config('block_completion_progress', 'cachevalue') + 1;
-        set_config('cachevalue', $value, 'block_completion_progress');
     }
 
     /**
@@ -328,30 +333,4 @@ class block_completion_progress extends block_base {
 
         return false;
     }
-
-    /**
-     * Checks whether the given page is site-level (Dashboard or Front page) or not.
-     *
-     * @param moodle_page $page the page to check, or the current page if not passed.
-     * @return boolean True when on the Dashboard or Site home page.
-     */
-    public static function on_site_page($page = null) {
-        global $PAGE;   // phpcs:ignore moodle.PHP.ForbiddenGlobalUse.BadGlobal
-
-        $page = $page ?? $PAGE; // phpcs:ignore moodle.PHP.ForbiddenGlobalUse.BadGlobal
-        $context = $page->context ?? null;
-
-        if (!$page || !$context) {
-            return false;
-        } else if ($context->contextlevel === CONTEXT_SYSTEM && $page->requestorigin === 'restore') {
-            return false; // When restoring from a backup, pretend the page is course-level.
-        } else if ($context->contextlevel === CONTEXT_COURSE && $context->instanceid == SITEID) {
-            return true;  // Front page.
-        } else if ($context->contextlevel < CONTEXT_COURSE) {
-            return true;  // System, user (i.e. dashboard), course category.
-        } else {
-            return false;
-        }
-    }
-
 }

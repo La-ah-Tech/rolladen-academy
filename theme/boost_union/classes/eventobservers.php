@@ -32,7 +32,6 @@ namespace theme_boost_union;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class eventobservers {
-
     /**
      * Cohort deleted event observer.
      *
@@ -47,9 +46,9 @@ class eventobservers {
         // If a flavour exists which is configured to apply to the given cohort.
         if (theme_boost_union_flavour_exists_for_cohort($event->objectid)) {
             // Purge the flavours cache as the users might get other flavours which apply after the cohort deletion.
-            // We would have preferred using cache_helper::purge_by_definition, but this just purges the session cache
+            // We would have preferred using \core_cache\helper::purge_by_definition, but this just purges the session cache
             // of the current user and not for all users.
-            \cache_helper::purge_by_event('theme_boost_union_cohort_deleted');
+            \core_cache\helper::purge_by_event('theme_boost_union_cohort_deleted');
         }
 
         // Require smart menus library.
@@ -129,6 +128,8 @@ class eventobservers {
 
         // Purge the cached menus for the user with the assigned role.
         smartmenu_helper::purge_cache_session_roles($event->objectid, $event->relateduserid);
+        // Purge the related user cache.
+        smartmenu_helper::set_user_purgecache($event->relateduserid);
     }
 
     /**
@@ -144,6 +145,8 @@ class eventobservers {
 
         // Purge the cached menus for the user with the unassigned role.
         smartmenu_helper::purge_cache_session_roles($event->objectid, $event->relateduserid);
+        // Purge the related user cache.
+        smartmenu_helper::set_user_purgecache($event->relateduserid);
     }
 
     /**
@@ -159,6 +162,8 @@ class eventobservers {
 
         // Purge the cached menus for all users with the deleted role.
         smartmenu_helper::purge_cache_deleted_roles($event->objectid);
+        // Purge all the dynamic course items cache.
+        smartmenu_helper::purge_cache_dynamic_courseitems();
     }
 
     /**
@@ -221,5 +226,53 @@ class eventobservers {
 
         // Clear the cache of menu when the course/module completion updated for user.
         smartmenu_helper::set_user_purgecache($event->relateduserid);
+    }
+
+    /**
+     * Event observer for when a course is restored.
+     *
+     * This observer is triggered when a course is restored and handles the special case
+     * of course imports (MODE_IMPORT) where theme plugins are not automatically called by Moodle core.
+     *
+     * @param \core\event\course_restored $event The course restored event.
+     */
+    public static function course_restored(\core\event\course_restored $event): void {
+        global $DB;
+
+        // Get event data.
+        $eventdata = $event->get_data();
+        $other = $eventdata['other'] ?? [];
+
+        // If this is not a course restore with the specific 'course import' conditions we're looking for, return directly.
+        $iscourseimport = isset($other['type']) && $other['type'] === \backup::TYPE_1COURSE
+            && isset($other['mode']) && $other['mode'] === \backup::MODE_IMPORT
+            && isset($other['operation']) && $other['operation'] === \backup::OPERATION_RESTORE
+            && isset($other['samesite']) && $other['samesite'] === true;
+        if (!$iscourseimport) {
+            return;
+        }
+
+        // Get the original and new course IDs.
+        $originalcourseid = $other['originalcourseid'] ?? null;
+        $newcourseid = $eventdata['courseid'] ?? null;
+
+        // If we don't have both course IDs for any reason, return.
+        if (!$originalcourseid || !$newcourseid) {
+            return;
+        }
+
+        // If the original course does not have any theme-specific settings to transfer, return.
+        if (!$DB->record_exists('theme_boost_union_course', ['courseid' => $originalcourseid])) {
+            return;
+        }
+
+        // Get the original course settings to transfer.
+        $originalsettings = $DB->get_records('theme_boost_union_course', ['courseid' => $originalcourseid]);
+
+        // Transfer course settings from original course to new course.
+        \theme_boost_union\util\course_settings_transfer::transfer_course_settings($originalsettings, $newcourseid);
+
+        // Transfer course files from original course to new course.
+        \theme_boost_union\util\course_settings_transfer::transfer_course_files($originalcourseid, $newcourseid);
     }
 }

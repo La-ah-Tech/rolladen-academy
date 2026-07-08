@@ -134,7 +134,7 @@ function xmldb_unilabeltype_imageboard_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2024012400, 'unilabeltype', 'imageboard');
     }
 
-    if ($oldversion < 2024050804) {
+    if ($oldversion < 2024122600) {
         // Define field fontsize to be added to unilabeltype_imageboard.
         $table = new xmldb_table('unilabeltype_imageboard');
         $field = new xmldb_field('titlelineheight', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'canvasheight');
@@ -162,13 +162,6 @@ function xmldb_unilabeltype_imageboard_upgrade($oldversion) {
             $dbman->add_field($table, $field);
         }
 
-        // Set for all records the titlelineheight value to "2".
-        $DB->set_field('unilabeltype_imageboard', 'titlelineheight', 2);
-
-        // Set for all records the alt value to "image".
-        $DB->set_field('unilabeltype_imageboard_img', 'borderradius', 10);
-        $DB->set_field('unilabeltype_imageboard_img', 'alt', 'image');
-
         // Define field urltitle to be added to unilabeltype_imageboard_img.
         $table = new xmldb_table('unilabeltype_imageboard_img');
         $field = new xmldb_field('urltitle', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'title');
@@ -178,7 +171,19 @@ function xmldb_unilabeltype_imageboard_upgrade($oldversion) {
             $dbman->add_field($table, $field);
         }
 
-        upgrade_plugin_savepoint(true, 2024050804, 'unilabeltype', 'imageboard');
+        upgrade_plugin_savepoint(true, 2024122600, 'unilabeltype', 'imageboard');
+    }
+
+    if ($oldversion < 2025042211) {
+        $table = new xmldb_table('unilabeltype_imageboard');
+        $key = new xmldb_key('unilabelid', XMLDB_KEY_FOREIGN_UNIQUE, ['unilabelid'], 'unilabel', ['id']);
+        $dbman->add_key($table, $key);
+
+        $table = new xmldb_table('unilabeltype_imageboard_img');
+        $key = new xmldb_key('imageboardid', XMLDB_KEY_FOREIGN, ['imageboardid'], 'unilabeltype_imageboard', ['id']);
+        $dbman->add_key($table, $key);
+
+        upgrade_plugin_savepoint(true, 2025042211, 'unilabeltype', 'imageboard');
     }
 
     return true;

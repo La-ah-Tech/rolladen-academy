@@ -46,7 +46,6 @@ function xmldb_unilabeltype_accordion_upgrade($oldversion) {
     }
 
     if ($oldversion < 2023111601) {
-
         // Define field sortorder to be added to unilabeltype_accordion_seg.
         $table = new xmldb_table('unilabeltype_accordion_seg');
         $field = new xmldb_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'accordionid');
@@ -60,8 +59,7 @@ function xmldb_unilabeltype_accordion_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2023111601, 'unilabeltype', 'accordion');
     }
 
-    if ($oldversion < 2024050900) {
-
+    if ($oldversion < 2025030800) {
         // Define field visible to be added to unilabeltype_accordion_seg.
         $table = new xmldb_table('unilabeltype_accordion_seg');
         $field = new xmldb_field('visible', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'content');
@@ -72,7 +70,19 @@ function xmldb_unilabeltype_accordion_upgrade($oldversion) {
         }
 
         // Accordion savepoint reached.
-        upgrade_plugin_savepoint(true, 2024050900, 'unilabeltype', 'accordion');
+        upgrade_plugin_savepoint(true, 2025030800, 'unilabeltype', 'accordion');
+    }
+
+    if ($oldversion < 2025042211) {
+        $table = new xmldb_table('unilabeltype_accordion');
+        $key = new xmldb_key('unilabelid', XMLDB_KEY_FOREIGN_UNIQUE, ['unilabelid'], 'unilabel', ['id']);
+        $dbman->add_key($table, $key);
+
+        $table = new xmldb_table('unilabeltype_accordion_seg');
+        $key = new xmldb_key('accordionid', XMLDB_KEY_FOREIGN, ['accordionid'], 'unilabeltype_accordion', ['id']);
+        $dbman->add_key($table, $key);
+
+        upgrade_plugin_savepoint(true, 2025042211, 'unilabeltype', 'accordion');
     }
 
     return true;

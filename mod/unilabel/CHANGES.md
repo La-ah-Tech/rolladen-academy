@@ -1,42 +1,71 @@
 ## Release notes
 
-### Release 4.4.10
+### Release 5.2
+* Use new choicelist for type chooser
+* Add new module description string
+* Fix wrong gap size in new elements
+
+### Release 5.1.4
+* Add automated completion option (#78)
+
+### Release 5.1.3
+* Add option to disable ajax load in grid.
+
+### Release 5.1.2
+* Refactor rendering of grid tiles (#75)
+
+### Release 5.1.1
+* MBS-10379: Add foreign keys to all unilabel type plugins (#74)
+
+### Release 5.1
+* Imageboard: new editing interface with image related modal view - Thanks to Andreas Schenkel
+* Apply new coding style
+
+### Release 5.0.3
+* MBS-10139: Error when drag and dropping accordion sections (#68)
+* Collapsed text type does not process filters anymore for the content in the "name" field (#70)
+
+### Release 5.0.2
 * MBS-10126: Do not clean accordion content (#63, #64)
 * Make caption more visible by default
 
-### Release 4.4.9
+### Release 5.0.1
 * fix missing rewrite files in accordion (#61)
 
-### Release 4.4.8
+### Release 5.0.0
+* Adjust output for new bootstrap 5.x
 * Change output filtering (#58)
 * Add a visibility option to accordion, carousel and grid (#55)
 
-### Release 4.4.7
+### Release 4.5.6
 * collapsedtext: upgrade faile on null values (#56)
 
-### Release 4.4.6
+### Release 4.5.5
 * imageboard: fix dnd boundery after changing background size
 
-### Release 4.4.5
+### Release 4.5.4
 * imageboard: remove setTimeout in js and fix helpergrid and preview image structure
 * imageboard: fix preview when deleting images in filemanager
 * optimize github actions for subplugins
 * fix lang string order
 
-### Release 4.4.4
+### Release 4.5.3
 * Add new url title to show a user friendly aria-label (#50)
 * Make tiles in grid focussable with keyboard (#52)
 * Add preview for imageboard editing page (Many, many thanks to Andreas Schenkel for this new feature!)
     * The preview updates the view while changing the image parameters.
     * The images in the preview can be moved using drag-n-drop.
 
-### Release 4.4.3
+### Release 4.5.2
 * Type collapsed text does not show modal dialog (#51)
 * Make github actions more restrictive
 
-### Release 4.4.2
+### Release 4.5.1
 * Add third button in modedit page to jump directly to the edit content page.
 * Add aria-label attributes to certain elements (#50)
+
+### Release 4.5.0
+* Fix type Topic teaser exclude new sub sections.
 
 ### Release 4.4.1
 * Type Collapsed text now uses the label name as title

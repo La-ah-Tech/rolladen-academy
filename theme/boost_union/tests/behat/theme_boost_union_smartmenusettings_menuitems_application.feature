@@ -14,11 +14,10 @@ Feature: Configuring the theme_boost_union plugin on the "Smart menus" page, app
     And the following "users" exist:
       | username |
       | user1    |
-    And I create smart menu with the following fields to these values:
-      | Title            | Quick links              |
-      | Menu location(s) | Main, Menu, User, Bottom |
+    And the following "theme_boost_union > smart menu" exists:
+      | title    | Quick links                                      |
+      | location | Main navigation, Menu bar, User menu, Bottom bar |
 
-  @javascript
   Scenario: Smartmenus: Menu items: Application - Add a smart menu item in smart menu to the main navigation
     When I log in as "admin"
     And I navigate to smart menu "Quick links" items
@@ -33,27 +32,32 @@ Feature: Configuring the theme_boost_union plugin on the "Smart menus" page, app
     And I log in as "user1"
     And I should see smart menu "Quick links" item "Badges" in location "Main, Menu, User, Bottom"
 
-  @javascript
   Scenario: Smartmenus: Menu items: Application - Display the smart menu items in inline mode
+    Given the following "theme_boost_union > smart menu item" exists:
+      | menu     | Quick links       |
+      | title    | Available courses |
+      | itemtype | Dynamic courses   |
+      | mode     | 1                 |
     When I log in as "admin"
-    And I set "Quick links" smart menu items with the following fields to these values:
-      | Title                            | Available courses |
-      | Menu item type                   | Dynamic courses   |
-      | Dynamic courses: Course category | Category 1        |
-      | Menu item mode                   | Inline            |
+    And I navigate to smart menu "Quick links" items
     And I should see "Available courses" in the "smartmenus_items" "table"
+    And I should not see smart menu "Available courses" in location "Main, Menu, User, Bottom"
     And I should not see smart menu "Quick links" item "Available courses" in location "Main, Menu, User, Bottom"
     And I should see smart menu "Quick links" item "Test course1" in location "Main, Menu, User, Bottom"
     And I should see smart menu "Quick links" item "Test course2" in location "Main, Menu, User, Bottom"
 
+  # The following scenario tests the presentation of the menu items as submenu and the correct UI behaviour of the submenu
+  # at the same time. That's why it uses a click-by-click approach instead of just checking the presence of the menu items
+  # in the DOM.
   @javascript
   Scenario: Smartmenus: Menu items: Application - Display the smart menu items in submenu modes
+    Given the following "theme_boost_union > smart menu item" exists:
+      | menu     | Quick links       |
+      | title    | Available courses |
+      | itemtype | Dynamic courses   |
+      | mode     | 2                 |
     When I log in as "admin"
-    And I set "Quick links" smart menu items with the following fields to these values:
-      | Title                            | Available courses |
-      | Menu item type                   | Dynamic courses   |
-      | Dynamic courses: Course category | Category 1        |
-      | Menu item mode                   | Submenu           |
+    And I navigate to smart menu "Quick links" items
     And I should see "Available courses" in the "smartmenus_items" "table"
     # Submenu items in main navigation.
     And I click on "Quick links" "link" in the ".primary-navigation" "css_element"
@@ -67,18 +71,18 @@ Feature: Configuring the theme_boost_union plugin on the "Smart menus" page, app
     And I click on "Quick links" "link" in the "#usermenu-carousel" "css_element"
     And I should see "Available courses" in the "#usermenu-carousel" "css_element"
     And I should not see "Test course1" in the "#usermenu-carousel" "css_element"
-    And I click on "Available courses" "link" in the ".carousel-item.active" "css_element"
-    And I should see "Test course1" in the ".carousel-item.active" "css_element"
-    And I should see "Test course2" in the ".carousel-item.active" "css_element"
+    And I click on "Available courses" "link" in the "#usermenu-carousel .carousel-item.active" "css_element"
+    And I should see "Test course1" in the "#usermenu-carousel .carousel-item.active" "css_element"
+    And I should see "Test course2" in the "#usermenu-carousel .carousel-item.active" "css_element"
     # Submenu items in bottom menu.
-    And I change the viewport size to "740x900"
+    And I change viewport size to "740x900"
     And I click on "Quick links" "link" in the ".bottom-navigation" "css_element"
     And I should see "Available courses" in the ".bottom-navigation" "css_element"
     And I should not see "Test course1" in the ".bottom-navigation" "css_element"
     And I click on "Available courses" "link" in the ".bottom-navigation" "css_element"
     And I should see "Test course1" in the ".bottom-navigation" "css_element"
     And I should see "Test course2" in the ".bottom-navigation" "css_element"
-    And I change the viewport size to "large"
+    And I change viewport size to "large"
     # Submenu items in menubar.
     And I click on "Quick links" "link" in the "nav.menubar" "css_element"
     And I should see "Available courses" in the "nav.menubar" "css_element"

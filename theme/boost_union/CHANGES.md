@@ -4,9 +4,428 @@ moodle-theme_boost_union
 Changes
 -------
 
-### v4.4-r6
+### v5.0-r30
 
-* 2024-11-19 - Upgrade: Support more seamless upgrade to 4.5 by only requiring /cache/classes/loaders.php if it is present, resolves #708.
+* 2026-06-13 - Tests: Use Behat slicing to bring Behat runtime down and reduce GHA container outages, resolves #1016
+* 2026-06-10 - Improvement: Support Bootstrap large and small buttons on the login page, resolves #1321
+* 2026-06-10 - Improvement: Support Moodle's color for the secondary outline buttons on the login page, resolves #1319
+* 2026-06-10 - Bugfix: Solve a debugging message when expanding a course category (when the Boost Union course/category listing presentation is activated), resolves #1317
+
+### v5.0-r29
+
+* 2026-06-09 - MWP: Avoid the 'class theme_boost_union\local\mwp not found' exception when upgrading the plugin, resolves #1314
+* 2026-06-08 - Cleanup: Remove unused strings from the language pack, resolves #1311
+* 2026-06-08 - Internal change: Replace $notification->set_show_closebutton(false) with the third parameter of new \core\output\notification(), resolves #1310
+* 2026-06-08 - Improvement: Align the flavours, smart menus and snippets table with the recommendations table, resolves #1309
+* 2026-06-08 - Glitch: Flavours actions tooltips were wrong, resolves #1307
+
+### v5.0-r28
+
+* 2026-06-06 - Tests: Fix PHPUnit Failure about missing SVGs for newly added FontAwesome mappings, resolves #1301
+* 2026-06-04 - Settings: Correct the 'Possible setting overrides' banners regarding the logo and the loginbackground settings
+* 2026-06-04 - MWP: Postprocess the default for the loginformposition setting, resolves #1302
+* 2026-06-03 - Improvement: Smart menus: Refine the "Number of words" option to only process the course full name, but neither the course short name nor the custom course fields.
+* 2026-06-03 - Improvement: Smart menus: Add more versatile course name presentation options to the dynamic courses, resolves #448
+* 2026-06-01 - Improvement: Improve the outer margins of the left-aligned and right-aligned login forms on smaller and of larger screens
+* 2026-06-01 - Improvement: Add a semi-left and semi-right option to the loginformposition setting, resolves #1296
+* 2026-05-31 - MWP: Add support for a Moodle Workplace™ extension for Boost Union, resolves #409
+
+### v5.0-r27
+
+* 2026-05-26 - Bugfix: Additional login background images may be not have been recognized directly after upload, resolved #1290
+* 2026-05-25 - Bugfix: Fix the default value of the courseoverviewshowcourseimages setting, resolves #1288
+* 2026-05-25 - Improvement: Use the real page layout names in the 'Additional block regions for xxx layout' setting labels as well.
+* 2026-05-25 - Improvement: Allow the admin to set the page layouts where the footnote is shown, helps to resolve #1279
+* 2026-05-24 - Improvement: Enhance recommendations to only show in the list if an action is needed, resolves #1285
+* 2026-05-24 - Improvement: Transform settings_overview.php into an admin_externalpage, resolves #1281
+
+### v5.0-r26
+
+* 2026-05-21 - Improvement: Add detail information about the current recommendation status and possible actions to the recommendation info modal, helps to resolve #1277
+* 2026-05-21 - Improvement: Add type class 'usability' and status class 'check' to the recommendations subsystem, helps to resolve #1277
+* 2026-05-21 - Improvement: Allow recommendation notifications to use arguments, helps to resolve #1277
+* 2026-05-21 - Internal change: Transform recommendation interface to a base class, helps to resolve #1277
+* 2026-05-19 - Bugfix: The loginselfregistrationshowintrosetting_desc and the loginguestshowintrosetting_desc strings described their default setting in the wrong way, resolves #1276
+* 2026-05-19 - Improvement: Add some explanation to the "Welcome back!" login brand option, resolves #1275
+
+### v5.0-r25
+
+* 2026-05-18 - Improvement: Add notifications to each of the global settings which can be overridden by flavours, resolves #1269
+* 2026-05-18 - Improvement: The flavours/styles.php file should use a per-flavour fallback stylesheet, resolves #1267
+* 2026-05-12 - Improvement: Allow the admin to further control the logo, heading, and tagline presentation on the login page, resolves #1262
+* 2026-05-12 - Improvement: Allow the admin to set the login page logo max-width and max-height as well as a margin-bottom and the horizontal alignment for the logo, resolves #1260
+* 2026-05-12 - Improvement: Add admin settings to set the button colors on the login page, resolves #1225.
+               Please note: Boost Union used to present the IDP login button with a secondary color button instead of an outline button as Moodle core does. This behaviour was hardcoded and undocumented. With the introduction of this setting, we set the default back to an outline button. Please set the IDP login button color to the presentation type of your choice during the plugin update.
+* 2026-04-11 - Internal change: Move theme_boost_union_is_active_theme() and theme_boost_union_is_active_childtheme() from locallib.php to lib.php
+* 2026-04-11 - Internal change: In the flavours edit form, use setDefault instead of setSelected.
+* 2026-05-11 - Settings: Re-arrange the login page settings as preparation for Boost Union 5.2
+* 2026-05-09 - Feature: Add a Boost Union recommendation page for admins and replace some notification boxes in the settings pages with it, resolves #1254
+* 2026-05-09 - Feature: Add a Checks API check to add the results of the Boost Union recommendations to the system status.
+
+### v5.0-r24
+
+* 2026-05-05 - Glitch: Make sure that the bottom border under the Reset user tours link in the footer is shown, resolves #1253
+* 2026-05-01 - Tests: Rephrase some smart menu scenarios as preparation for Boost Union 5.2
+* 2026-05-01 - Tests: Fix a glitch in the mobile scss branding scenario as preparation for Boost Union 5.2
+* 2026-05-01 - Tests: Rephrase the calendar branding scenarios as preparation for Boost Union 5.2
+* 2026-05-01 - Internal change: Compose self enrolment instance for the showhintcourseselfenrol setting differently as preparation for Boost Union 5.2
+* 2026-05-01 - Tests: Do not use the 'I am on the "Acceptance test site" "Course" page' steps anymore as preparation for Boost Union 5.2
+* 2026-05-01 - Tests: Use the 'I navigate to site home settings' step throughout the whole code base as preparation for Boost Union 5.2
+* 2026-05-01 - Tests: Use the 'I am on login page' step throughout the whole code base as preparation for Boost Union 5.2
+* 2026-05-01 - Improvement: Add setting for background-size to advertisement tiles, resolves #1195
+* 2026-05-01 - Tests: Drop 'And Behat debugging is (en|dis)abled' steps, resolves #1242
+* 2026-04-30 - Cleanup: Drop overwritten templates/theme_boost/drawer.mustache, resolves #1246
+
+### v5.0-r23
+
+* 2026-04-26 - Feature: Allow not only internal WAYF services based on the Shibboleth config, but also based on JavaScript code, resolves #1230
+* 2026-04-08 - Improvement: Tweak the edit button colors so that it better fits onto tinted navbars.
+* 2026-04-08 - Improvement: Add dedicated color picker for setting the navbar color, resolves #1224
+* 2026-04-08 - Improvement: Filter additionalhtmlfooter as does Moodle core from Moodle 5.2 on (MDL-88210 / MDL-85498), resolves #847
+* 2026-04-08 - Bugfix: The login page label settings lacked a hide_if, resolves #1229
+* 2026-04-08 - Feature: Setting to split multiple IDP login buttons into individual tabs / accordeon elements / vertical sections, resolves #1130
+* 2026-04-08 - Feature: Setting to show Shibboleth internal WAYF (IdP list) on the main login page instead of the default Shibboleth button, resolves #1130
+* 2026-04-08 - Improvement: Add admin setting to tint grey colors, resolves #1220
+
+### v5.0-r22
+
+* 2026-04-07 - Tests: Add a test to view a user tour
+* 2026-04-03 - Improvement: Add CLI script to validate the SCSS compilation and to see SCSS compilation errors, resolves #1217
+* 2026-03-31 - Improvement: Allow the footnote text to be set in flavours as well, resolves #1216
+* 2026-03-31 - Internal change: Prefix all custom Boost Union SCSS variables which are set by Boost Union settings with 'bu-' for the sake of consistency
+* 2026-03-30 - Feature: Add admin settings to tint links and buttons separate from the primary brand color, resolves #709
+* 2026-03-30 - Improvement: SmartMenus: Improve mailto menu items with predefined email content, resolves #1122
+* 2026-03-28 - Tests: Fix a broken test related to breadcrumbs, resolves #1207
+
+### v5.0-r21
+
+* 2026-03-24 - Improvement: Remove the 25 images limit for login background images, resolves #815
+* 2026-03-18 - Bugfix: Add an option to harden non-editable block regions by introducing a custom block manager, resolves #472
+* 2026-03-18 - Feature: Smart menus: Add dynamic course setting to filter starred courses, resolves #446
+* 2026-03-16 - Improvement: Add placeholders to static menu items' title and URLs, resolves #423
+* 2026-03-09 - Bugfix: after_form_* hooks should require the library as well, resolves #1191
+
+### v5.0-r20
+
+* 2026-03-08 - Improvement: Add additional block regions on the 'mycourses' page layout to show sticky blocks at least, resolves #1141
+* 2026-03-08 - Improvement: Improve horizontal width and vertical alignment of the login page tabs layout with JS, resolves #1187
+* 2026-03-06 - Improvement: Add dedicated Boost Union login page instructions, resolves #1170\
+               Please note: If you have used the auth_instructions setting in Moodle core before, you must copy that content to the new login page instructions as Boost Union does not display auth_instructions anymore.
+* 2026-03-05 - Bugfix: Page footer got distorted on small screens with the new login layout options, resolves #1175
+* 2026-03-05 - Bugfix: Filter login tab descriptions, resolves #1179
+* 2026-03-05 - Documentation: Add a note to README that the behaviour of logos and favicons deviates from Boost Union's main principle to not change anything at all after being activated.
+* 2026-03-05 - Bugfix: Fix edge cases of the new login form layouts on smaller screens, resolves #1169
+* 2026-03-05 - Bugfix: Require FooterPopover only if footer button present, resolves #1177
+
+### v5.0-r19
+
+* 2026-02-28 - Bugfix: SCSS changes in flavours were not reflected in theme designer mode, resolves #625
+* 2026-02-28 - Bugfix: Smart Menu sometimes repeated menus, resolves #800
+* 2026-02-27 - Tests: theme_boost_union_is_active_theme() triggered "theme already set up" exception during PHPUnit tests, resolves #1165
+
+### v5.0-r18
+
+* 2026-02-26 - Bugfix: Smart menu creation was not possible if a custom field which hid itself from the course settings form was present, resolves #1164
+* 2026-02-24 - Feature: Add new login layouts and other login settings, resolves #1055
+* 2026-02-24 - Improvement: Hide the "Calendar" navigation item for guests as well, resolves #1167
+* 2026-02-12 - Improvement: Solve Mustache glitches in the enhanced header templates, resolves #1161
+* 2026-02-12 - SCSS snippet: Aligned course section borders, resolves #1132
+
+### v5.0-r17
+
+* 2025-02-10 - Bugfix: After introducing the course-specific settings in Boost Union in the latest release, entering course settings was not possible anymore if Boost Union was not the active theme, resolves #1155
+
+### v5.0-r16
+
+* 2025-02-07 - Improvement: Allow the admin to restrict the maximum width of the sitename to avoid that the edit button widget breaks with really long site names, resolves #256.
+* 2026-02-06 - Improvement: Prevent that the loginbackgroundimagetext setting is shown in the Moodle upgrade wizard after the initial installation, resolves #1151
+* 2026-02-06 - Bugfix: The initial Moodle installation failed if Boost Union was set as theme in config.php, resolves #1143.
+* 2025-02-06 - Update: Adopt changes to doc_link() from MDL-82867
+* 2026-02-06 - Update: Adopt changes to colorpicker_rule class from MDL-87870
+* 2026-02-06 - Update: Adopt changes to navbar.mustache from MDL-86436
+* 2026-01-30 - Admin: Move the category breadcrumb from "Feel" to "Look" near the new course header settings.
+* 2026-01-22 - Improvement: Add a setting to control if a particular info banner is shown above of below the page header.
+* 2026-01-22 - Improvement: Align minor aspects (course shortname, course fields, course progress) of the look of the course-card and course-list view of the course listings more with the new course headers in Boost Union and less with the My courses page of Moodle core.
+* 2026-01-22 - Feature: Enhance the adaptability of the course header including the possibility for teachers to configure it per course, resolves #138.\
+               Please note: If you have uploaded an image in the "Fallback course header image" filearea before, this image will be migrated to the new "Global course header image" filearea during this update.
+* 2026-02-03 - Bugfix: Site support form success message was shown below blocks or advert tiles on frontpage, resolves #488
+* 2026-02-01 - Feature: Add dark variant setting for the slider, resolves #914
+* 2026-02-01 - Feature: Add individual carousel item interval setting for each slide, resolves #915
+* 2026-02-01 - Bug: Changing the activity icon purpose of LTI activities did not have an effect in the activity chooser, resolves #690
+* 2026-02-01 - Improvement: Get rid of ESLint warning in drawers.mustache, resolves #1107
+
+### v5.0-r15
+
+* 2026-01-31 - Feature: Allow the admin to upload a course overview fallback image to be used on the myoverview page instead of the geometric pattern, resolves #171
+* 2026-01-31 - Admin: courselistingprogressstyle was not hidden again if courselistingpresentation was disabled after courselistinghowprogress was enabled, resolves #1135
+* 2026-01-28 - Bugfix: The installation of Boost Union crashed on latest moodle main after MOD_PURPOSE_INTERFACE was removed in Moodle 5.2dev, resolves #1126.
+* 2026-01-27 - Tests: The "Allow admins to use the tertiary navigation to navigate between the individual Boost Union admin pages" scenario failed on 5.0 and 5.1, resolves #1123
+
+### v5.0-r14
+
+* 2026-01-21 - Bugfix: On brand-new Moodle installations, Boost Union tried to access the mdl_files table before it was created, resolves #1058
+* 2026-01-21 - Bugfix: Moodle core unittest was failing due to a missing fallback svg icon, resolves #1113
+* 2025-11-19 - Improvement: Improve the check for date-based smart menus from < to <= when checking for the starting date.
+* 2025-11-19 - Internal changes: Align internal filearea names for slide and tile backgrounds, helps to resolve #839\
+               Please note: While an upgrade script should migrate existing files, please double-check if existing slides and advertisement tiles are still presented correctly on the frontpage.
+* 2025-11-19 - Tests: Further Behat runtime optimisations, helps to resolve #839
+
+### v5.0-r13
+
+* 2025-11-19 - Backport: Replace Boost Union's hook manipulation with a more downstream solution to suppress hook output, resolves #1101.
+* 2025-11-19 - Bugfix: additionalhtmlfooter is now rendered even if the footer is hidden entirely, resolves #1042
+* 2025-11-15 - Improvement: Add config.php parameter to support GitHub Enterprise servers for external SCSS, resolves #1041.
+* 2025-11-12 - Improvement: Lighten the hook manipulation on 5.0, resolves #1098.
+* 2025-11-11 - Upstream change: Adopt changes from MDL-85418 to submenu.js, resolves #1095.
+
+### v5.0-r12
+
+* 2025-11-07 - Improvement: Improve wrapping of the outside-left and outside-right regions, resolves #255.
+* 2025-11-07 - Upstream change: Adopt changes from MDL-85774 into loginform.mustache, resolves #1093
+* 2025-11-04 - Improvement: Add vertical offset to the outside-left and outside-right block regions, resolves #254.
+* 2025-11-04 - Bugfix: When upgrading a Boost Union installation from the ancient pre-smart-menu-era to a recent version, Boost Union tried to access a table which does not exist yet, resolves #1085
+* 2025-11-03 - Glitch: upgrade.php did not match install.xml regarding the theme_boost_union_snippets table, resolves #1062
+* 2025-11-03 - Improvement: Use human-understandable values in the background position settings, resolves #1086
+* 2025-11-03 - Improvement: Make the outside-left and outside-right block regions fully responsive, finally moving them out of their experimental state, resolves #266.
+* 2025-10-23 - Feature: Add a type for smart menu item to use mailto links, resolves #702
+
+### v5.0-r11
+
+* 2025-10-22 - Bugfix: Solve possible performance issues due to hook override cache being invalidated by CLI scripts, resolves #1076
+* 2025-10-21 - Tests: Some Behat tests for smart menus failed on 5.0, resolves #1074
+* 2025-10-15 - Make codechecker happy again
+* 2025-10-15 - Tests: Switch Github actions workflows to reusable workflows by Moodle an Hochschulen e.V.
+* 2025-10-20 - Tests: Add tests for Boost Union features which might but must not affect other active themes, resolves #761
+* 2025-10-16 - Feature: Add Bootstrap alert to Boost Union settings if Boost Union (or Boost Union Child) is not the active theme, resolves #773.
+* 2025-10-15 - Improvement: On course cards, display the course fields as Bootstrap badges, resolves #1070
+
+### v5.0-r10
+
+* 2025-10-07 - Upstream change: Adopt changes from MDL-81702 to remove site home link from drawers, resolves #1065
+* 2025-10-07 - Upstream change: Adopt changes from MDL-81455 to fix the welcome message heading on the dashboard, resolves #1066
+
+### v5.0-r9
+
+* 2025-10-06 - Bugfix: Block titles were missing after changes in Moodle core in MDL-86541, resolves #1061.
+* 2025-08-01 - Bugfix: Smart menu: menu bar was displayed although there were no items to display, resolves #849.
+
+### v5.0-r8
+
+* 2025-07-31 - Bugfix: Uninitialized $overflow might have caused the smart menu item icon picker to fail, resolves #1035
+* 2025-07-28 - Bugfix: Reposition Boost Union footer buttons correctly if sticky footer is shown, resolves #1033
+* 2025-07-28 - Improvement: Query SCSS snippets table during theme refresh only if the table exists, resolves #1024
+* 2025-07-25 - Improvement: Introduce SCSS variable for smart menu menubar and bottom bar height, resolves #1023
+
+### v5.0-r7
+
+* 2025-07-22 - SCSS Snippet: Tertiary navigation button, resolves #1017
+* 2025-07-22 - Improvement: Add CLI script to re-populate the list of built-in SCSS snippets, resolves #1019
+* 2025-07-22 - Tests: Fix failing Behat test with the tertiary navigation, resolves #1009
+* 2025-07-22 - Tests: Fix broken PHPUnit tests for SCSS snippets, resolves #1015
+
+### v5.0-r6
+
+* 2025-07-18 - Improvement: Allow all (solid and brands) FontAwesome icons for smart menu items, resolves #493\
+               Please note: Smart menu item icons are now distinguished if they come from Moodle core or from FontAwesome. Please have a look at the help icon for smart menu item icons if you are interested in the details.
+* 2025-07-18 - Improvement: Improve the smart menu items icon list by replacing the custom icon picker with a Moodle autocomplete widget, by adding the icon names to the list and by sorting the list, helps to resolve #493
+* 2025-07-18 - Tests: Fix failing Behat test with the tertiary navigation, resolves #1009
+* 2025-07-16 - Tests: Fix / Improve Behat tests which deal with viewport sizes, resolves #1004 and #952.
+* 2025-07-08 - Feature: Add a dedicated divider menu item type for smart menus, resolves #453.\
+               Please note: Existing dividers created using heading type with hash signs will be automatically converted to the new divider type during this version update.
+* 2025-07-07 - Bugfix: SCSS Snippets overview page did not show previews of uploaded snippets, resolves #993
+* 2025-07-06 - Feature: Add first version of CSS snippets feature, credits go to all members of the MoodleMootDACH 2024 dev camp team no. 22, resolves #988
+
+### v5.0-r5
+
+* 2025-07-05 - Chore: Rename the setting 'courselistinghowfields' to 'courselistingshowfields' to fix a typo
+* 2025-07-05 - Improvement: Allow the admin to select the custom course fields on the course cards, resolves #846
+* 2025-07-04 - Feature: Show course progress as progress bar on the course cards, resolves #844
+* 2025-07-03 - Improvement: Show the login link in the navbar as button, resolves #979.
+* 2025-06-06 - Feature: Add color picker settings for calendar branding, resolves #434.
+* 2025-06-30 - Regression: Flavour favicon images were not working, resolves #942
+* 2025-06-30 - Regression: Flavour background images were not working, resolves #942
+* 2025-06-30 - Improvement: Allow the "guest access" hint for teachers to be shown as well if a guest password is set, resolves #984
+
+### v5.0-r4
+
+* 2025-06-09 - Upstream change: Remove preemptive regression fix after MDL-85326 was integrated, resolves #928.\
+               Please note: This change raises the required Moodle core version to 5.0.1
+* 2025-06-09 - Tests: Fix a failing Behat test on the 'Allow admins to use the tertiary navigation' scenario, resolves #973
+* 2025-06-06 - Upstream change: Adopt changes from MDL-85323 to locallogin.php
+* 2025-06-06 - Upstream change: Adopt changes from MDL-85450 to upcoming-mini.mustache
+* 2025-06-06 - Upstream change: Adopt changes from MDL-85220 to view-chards.mustache
+* 2025-06-04 - Bugfix: Enabling the footersuppresslogininfo setting prevented the reset of the failed login attempts counter, resolves #658
+* 2025-06-04 - Bugfix: Prevent debug message regarding newly introduced "displayhiddencourses" and "hiddencoursesort" option in dynamic courses items, resolves #970
+
+### v5.0-r3
+
+* 2025-05-30 - Improvement: Smart menus now display hidden courses to users with the appropriate capability, resolves #407.\
+               Please note: With this change, existing dynamic courses smart menu items will start to show hidden courses as this is what most users expect. If you do not want to show hidden courses, please change the newly introduced 'Show hidden courses' setting in your existing menu items after the theme update.
+* 2025-05-30 - Improvement: Transform the plain paragraphs on some settings pages into Bootstrap alerts for a nicer look.
+* 2025-05-27 - Bugfix: The page scrolled to the top when a dynamic courses submenu got clicked, resolves #962.
+
+### v5.0-r2
+
+* 2025-05-26 - Bugfix: Language selector menu for visitors did not respect navbar color, resolves #966.
+* 2025-05-26 - Bugfix: Main navigation more menu did not respect navbar color, resolves #967
+* 2025-05-26 - Improvement: Enhance course related hint for guest access for teachers by a possibility to build own guest access link, resolves #960.
+* 2025-05-25 - Bugfix: Fix a faulty HTML structure in the slider feature, resolves #965.
+* 2025-05-23 - Feature: Add course related hint for guest access for teachers as well, resolves #960.
+* 2025-05-23 - Improvement: Re-sort the settings for the course related hints.
+
+### v5.0-r1
+
+* 2025-04-10 - Upgrade: Replace Bootstrap class custom-select with form-select
+* 2025-05-17 - Upgrade: Failing smart menu Behat tests on Moodle 5.0, resolves #929.
+* 2025-05-17 - Upgrade: Adopt changes from /lib/amd/src/usermenu.js to /theme/boost_union/amd/src/submenu.js, resolves #913.
+* 2025-04-10 - Upgrade: Fix the inline-block presentation of the date settings in the infobanner settings.
+* 2025-05-08 - Preemptive regression fix: Moodle 5.0 showed the footer (questionmark) icon on mobiles as well, resolves #928.
+* 2025-04-10 - Upgrade: Remove the 'none' option from the slider animation type as this seems not to anymore out of the box in Bootstrap 5.
+* 2025-04-10 - Upgrade: Adapt some more deprecated Bootstrap classes.
+* 2025-04-10 - Improvement: Change the defaults of the theme/boost_union:viewregion* capabilities for the guest role on new Boost Union installatins, resolves #893.\
+               Please note: Boost Union instances which are upgraded from a release before v5.0 will see a notification on /admin/settings.php?section=theme_boost_union_feel#theme_boost_union_feel_blocks and will have the possibility there to fix the defaults of the role automatically.
+* 2025-04-10 - Upgrade: Adapt width of advertisement tiles on site home, resolves #917.
+* 2025-04-10 - Upgrade: Support the new activity overview page when changing activity icon purposes in Boost Union.
+* 2025-04-10 - Upgrade: Remove recentlyaccesseditemstintenabled setting as the icons in this block are tinted by default now in Moodle 5.0.
+* 2025-04-10 - Upgrade: Adapt activity coloring for Moodle 5.0 and remove the activityiconcolorfidelity setting, resolves #824.
+* 2025-04-10 - Upgrade: Remove activitiestintenabled setting as the activities block is gone in Moodle 5.0.
+* 2025-04-10 - Upgrade: Adapt Behat tests as the subsections are now enabled by default
+* 2025-04-10 - Upgrade: Adopt changes regarding dismisssing alerts for the infobanner feature in Boost Union
+* 2025-04-10 - Upgrade: Adopt Bootstrap changes to the media-breakpoint-down mixin
+* 2025-04-10 - Upgrade: Adopt Bootstrap changes to the slider feature in Boost Union
+* 2025-04-10 - Upgrade: Fix the appearance of the off-canvas block region
+* 2025-04-10 - Upgrade: Adopt changes for course index view feature in Boost Union
+* 2025-04-10 - Upgrade: Adopt changes to other sr-only classes used in Boost Union
+* 2025-04-10 - Upgrade: Adopt changes to submenu.js
+* 2025-04-10 - Upgrade: Adopt changes to other data-bs-* attributes used in Boost Union
+* 2025-04-10 - Upgrade: Adopt changes to courselistingcard.mustache
+* 2025-04-10 - Upgrade: Adopt changes to courselistinglist.mustache
+* 2025-04-10 - Upgrade: Adopt changes to smartmenus-*menu-children.mustache
+* 2025-04-10 - Upgrade: Adopt changes to cm.mustache
+* 2025-04-10 - Upgrade: Adopt changes to user_menu.mustache
+* 2025-04-10 - Upgrade: Adopt changes to loginform.mustache
+* 2025-04-10 - Upgrade: Adopt changes to moremenu.mustache
+* 2025-04-10 - Upgrade: Adopt changes to primary-drawer-mobile.mustache
+* 2025-04-10 - Preemptive regression fix: Communication button in course did not use the same Bootstrap 5 styling as the footer (questionmark) button, resolves #912.
+* 2025-04-10 - Upgrade: Adopt changes to footer.mustache and all Boost Union footer buttons.
+* 2025-04-10 - Upgrade: Adopt changes to drawers.mustache
+* 2025-04-10 - Upgrade: Adopt changes to classes/boostnavbar.php
+* 2025-04-10 - Upgrade: Adopt changes to drawer.mustache
+* 2025-04-10 - Upgrade: Adopt Bootstrap changes to navbar.mustache and the colored navbar feature.\
+               Please note: The bg-dark color has changed in Bootstrap 5 which results in Boost Union in a even darker navbar.
+* 2025-04-10 - Upgrade: Remove mediumwidth setting, resolves #780
+* 2025-04-10 - Upgrade: Replace the $nav-divider-color SCSS variable in post.scss which does not exist anymore and prevented the Boost Union SCSS from being compiled.
+* 2025-04-10 - Prepare compatibility for Moodle 5.0.
+
+### v4.5-r17
+
+* 2025-05-21 - Bugfix: Smart menu "Visibility by language" restriction was not applied correctly after changes of the current language, resolves #697.
+* 2025-05-20 - Release: Set the Boost Union logo and tagline as screenshot for the theme overview page, resolves #925
+
+### v4.5-r16
+
+* 2025-05-08 - Feature: Allow the admin to configure the link target of the cog icon in the starred courses popover, resolves #939
+* 2025-05-08 - Bugfix: Smart menu item icon was not black when hovered on a black navbar, resolves #936
+
+### v4.5-r15
+
+* 2025-05-06 - Tests: The fine-grained personal access token (theme-boost_union-extscsstest.behat) had expired, resolves #932
+* 2025-05-06 - Regression: Course search page did not use the improved course listings anymore, resolves #930
+* 2025-05-02 - Bugfix: On mobile devices, the course listing combo box produced horizontal scroll bars, resolves #926.
+* 2025-04-30 - Bugfix: Modified smart menu transition time had an impact on the slider, resolves #922.
+* 2025-04-30 - Bugfix: Fix a HTML nesting glitch for the course lists on site home, resolves #919.
+* 2025-04-28 - Improvement: Remove a surplus CSS statement regarding the back-to-top button.
+
+### v4.5-r14
+
+* 2025-04-25 - Improvement: Fix a small glitch in the slider's language strings
+* 2025-04-24 - Bugfix: Make sure that the navbar highlight is not shown in the dark navbar, resolves #908.
+* 2025-04-22 - Bugfix: Support multilang course category names in stickyheaders, resolves #905.
+
+### v4.5-r13
+
+* 2025-04-06 - Bugfix: Enrol page used modified course listing renderer from category index / site home as well, resolves #895.
+* 2025-04-01 - Feature: Add moodle documentation smartmenu item type, resolves #657.
+
+### v4.5-r12
+
+* 2025-03-29 - Bugfix: Remove assumption that syscontext->id = 1, resolves #627
+* 2025-03-28 - Improvement: Add resizing to flavour logo and compact logo, resolves #212.
+* 2025-03-27 - Improvement: Add admin main navigation to smart menu items page as well, resolves #882.
+* 2025-03-27 - Improvement: Add tertiary navigation to Boost Union admin settings pages to allow jumping from one settings page to another, resolves #876.
+               Child theme support: If you are running a Boost Union Child theme, please make sure to adapt your child theme to our latest boilerplate.
+
+### v4.5-r11
+
+* 2025-03-26 - Bugfix: Footer button got pushed upwards even though no bottom menu bar was present, resolves #784.
+* 2025-03-25 - Bugfix: If a course category is hidden, the "go to course" button (in the course cards view) got a wrong color, resolves #877.
+* 2025-03-25 - Bugfix: Make sure that the sticky category headers (in the course cards view) does not cover the more menu, resolves #866.
+* 2025-03-25 - Bugfix: Do not show the sticky category headers (in the course cards view) for categories with just a few courses, resolves #866.
+* 2025-03-24 - Bugfix: SmartMenu caused JavaScript error 'Uncaught TypeError: moreMenu is null', resolves #850.
+* 2025-03-10 - Bugfix: Guests could not use the side entrance login page, resolves #653.
+* 2025-03-10 - Bugfix: Fix unwanted redirect to IdP from locallogin.php in case alternateloginurl is set, resolves #775.
+* 2025-03-10 - Improvement: Show a clearer warning to the admin about the risks of disabling the local login form, resolves #777.
+* 2025-03-10 - Improvement: Allow the side entrace login page to be enabled independent from the localloginenable setting, resolves #782
+
+### v4.5-r10
+
+* 2025-03-10 - Bugfix: The course details modal did not work on all site home widgets, resolves #851.
+* 2025-03-09 - Bugfix: The theme's SCSS could not be built if setting activityiconcolorfidelity was not set yet, resolves #838
+* 2025-03-09 - Upgrade: Remove theme_boost_union_before_standard_html_head and theme_boost_union_before_standard_top_of_body_html callbacks from Moodle 4.5 and 4.4 releases finally, resolves #604.
+* 2025-03-09 - Improvement: Introduce a Boost Union specific string for "submit" to be used in the accessbility support form which allows better translatons, resolves #830.
+* 2025-03-08 - Upgrade: Replace .media Bootstrap class according to MDL-80396, resolves #835.
+* 2025-03-08 - Improvement: Add setting to limit the maximum width of the navbar logo if it is too broad or has a special aspect ratio, resolves #544.
+
+### v4.5-r9
+
+* 2025-02-22 - Feature: Add some styling to the category listings on site home and on the category index pages, resolves #840.
+* 2025-02-16 - Feature: Show the course listing on site home and on the category index pages as (proper) list, resolves #573.
+* 2025-02-07 - Feature: Show the course listing on site home and on the category index pages as cards, resolves #558.
+
+### v4.5-r8
+
+* 2025-02-17 - Bugfix: Remove the possibility to set the activity purpose for subsections to avoid that activities within subsections get tinted with the wrong color, resolves #823.
+* 2025-02-12 - Bugfix: Accessibility page link in description differed from real location, resolves #818.
+
+### v4.5-r7
+
+* 2025-02-11 - Bugfix: Using smart menus together with custom menus broke Moodle, resolves #814, regression of #602.
+* 2025-02-10 - Bugfix: Adopt accessibility changes from MDL-67683 which led to Boost Union Behat failures on Moodle core 4.5.2 and 4.4.6, resolves #813.\
+               Please note: This change raises Boost Union's required Moodle core version to 4.5.2.
+
+### v4.5-r6
+
+* 2025-02-04 - Improvement: Hide the 'Menu item mode' settings for smart menu items which are not of the 'dynamic courses' item type, resolves #804.
+* 2025-02-04 - Bugfix: Smart menu 3rd level submenus were being cut-off in responsive / mobile view, resolves #356.\
+               Please note: This is a comparably large visual change which effectively replaces the presentation of a 3rd level smart menu (which can only be realized with dynamic courses menu items up to now). Flyout menus in the main navigation area and the menu bar area have been replaced with the 'sliding door' submenu behaviour which has been used in the user menu only up to now. If you are using dynamic courses menu items, please test your particular smart menu setup before updating to this Boost Union release.
+* 2025-02-04 - Bugfix: Smart menu 3rd level submenus had a font color which differed from the 2nd level and might have been even invisible, resolves #459.
+* 2025-02-04 - Bugfix: Long smart menus were not scrollable vertically, resolves #406.
+* 2025-02-04 - Bugfix: Fix smart menu dynamic course items not updating properly based on course role assignments, resolves #749.
+* 2025-02-04 - Bugfix: Smart menu item pointing to external site gets highlighted as active by mistake, resolves #758.
+* 2025-02-04 - Improvement: Allow changing of home URL on small devices as well, resolves #802.
+* 2025-01-31 - Improvement: Add option to include alt text for item image in smart menu cards, resolves #752.
+
+### v4.5-r5
+
+* 2024-12-31 - Child theme support: Fully replicate Boost Union's extra SCSS if a Boost Union Child theme is the current theme, resolves #718, resolves theme_boost_union_child/#5.
+* 2024-12-31 - Bugfix / Child theme support: The theme_boost_union_get_pre_scss() and theme_boost_union_get_extra_scss() function used $theme->settings although they should not do that anymore, resolves #791
+* 2024-12-31 - Tests: Increase the test coverage for the background image setting, helps to resolve theme_boost_union_child/#5
+* 2024-12-31 - Bugfix: In flavours, not setting the brand color / bootstrap colors in a flavour did not result in the global brand color / bootstrap colors being served properly, resolves #790.
+* 2024-12-30 - Improvement: Add more flavour settings (Activity icon colors, navbar color, background image position), resolves #789.
+* 2024-12-25 - Documentation: Explain the SCSS stack order in the README.
+* 2024-12-25 - Bugfix: Fix the order in which all the pre SCSS assets are added to the SCSS stack, resolves #788.
+* 2024-12-22 - Feature: Allow overwriting of brand colors and the usage of SCSS (instead of pure CSS) in flavours, resolves #155.
+               Child theme support: If you are running a Boost Union Child theme, please make sure to adapt your child theme to our latest boilerplate.
+* 2024-12-15 - Feature: Add declaration of accessibility page and accessibility support page, resolves #567.
+
+### v4.5-r4
+
+* 2024-12-06 - Tests: Add several Behat optimisations to bring down the test suite run time, resolves #765.
+* 2024-12-06 - Upstream change: Adopt changes from MDL-83759 ('System notification navbar popover is misplaced in Moodle 4.4 and 4.5')
+* 2024-12-06 - Upstream change: Adopt changes from MDL-75610 ('Quiz activity name no longer being displayed in quiz landing page when using Safe Exam Browser'), resolves #766.
+
+### v4.5-r3
+
 * 2024-11-19 - Bugfix: The starred courses popover showed a JavaScript error in the browser JS console, resolves #759.
 * 2024-11-19 - Bugfix: The starred courses popover in the navbar must only be shown if Boost Union or Boost Union child is active, resolves #759.
 * 2024-11-18 - Improvement: Add the possibility to restrict smart menus and smart menu items to site admins and non-site admins only, resolves #421.
@@ -15,14 +434,49 @@ Changes
 * 2024-11-13 - Upstream change: Adopt changes from MDL-78999 ('Site logo does not appear in mobile view'), resolves #753.
 * 2024-11-11 - Release: Add ssystems GmbH to the list of maintainers in README.md.
 
-### v4.4-r5
+### v4.5-r2
 
 * 2024-10-31 - Bugfix: Fix possible site failure when a cohort or role used as restriction of a smart menu item is deleted, resolves #737.
 * 2024-10-24 - Release: Change support thread URL in README to a tiny URL.
+* 2024-10-24 - Tests: Try to fix Behat error 'Warning: Undefined array key 1' on Moodle 4.5, resolves #734.
 
-### v4.4-r4
+### v4.5-r1
 
-* 2024-10-23 - Backport: Use the before_session_start() callback instead of the after_config() callback on Moodle 4.4, resolves #721.
+* 2024-10-15 - Upgrade: Update FontAwesome icon mappings for handling external links.
+* 2024-10-15 - Upgrade: Add note to the 'Login providers' settings that Boost Union will continue to use its own settings, even after MDL-80967 was integrated in Moodle 4.5
+* 2024-10-15 - Upgrade: Enhance the 'activity type icons in course index' feature to support subsections in 4.5 + align the icon stylings to 4.5
+* 2024-10-14 - Upgrade: Fix broken Behat scenario 'Smartmenu: Menus: Presentation - Display smart menu description in different places'
+* 2024-10-14 - Upgrade: Fix broken Behat scenario 'Smartmenus: Menu items: Presentation - Display the menu items title with icon'
+* 2024-10-14 - Upgrade: Fix broken Behat scenario 'Setting: Custom icons files - Upload custom icons files'
+* 2024-10-14 - Upgrade: Fix broken Behat scenario 'Flavours: Caching - After deleting a cohort, the flavour which applies now should take direct effect'
+* 2024-10-14 - Upgrade: Fix broken Behat scenario 'Setting: Footer - Suppress icons in front of the footer links'
+* 2024-10-14 - Upgrade: Adopt changes from MDL-82183 and use several new class names, at least in our own / non-adopted code.
+* 2024-10-14 - Upgrade: Adopt changes from MDL-81960 and use new \core\url class, at least in our own / non-adopted code.
+* 2024-10-14 - Upgrade: Adopt changes from MDL-81920 and use new \core\lang_string class.
+* 2024-10-14 - Upgrade: Adopt changes from MDL-81031 and use new \core\user class.
+* 2024-10-14 - Upgrade: Adopt changes from MDL-66903 and use new \core\component class.
+* 2024-10-14 - Upgrade: Adopt changes from MDL-82158 and use new cache classes.
+* 2024-10-13 - Upgrade: Adopt changes from MDL-75671 into custom Boost Union code.
+* 2024-10-13 - Upgrade: Remove legacy implementation of before_standard_html_head, resolves #606.
+* 2024-10-13 - Upgrade: Adopt changes from MDL-82183 where lib/outputrenderers.php was split up.
+* 2024-10-13 - Upgrade: Adopt changes from MDL-75671 in navbar.mustache
+* 2024-10-13 - Upgrade: Adopt changes from MDL-81725 in cm.mustache
+* 2024-10-13 - Upgrade: Adopt changes from MDL-75671 in cm.mustache
+* 2024-10-13 - Upgrade: Adopt changes from MDL-75671 in event-list-item.mustache
+* 2024-10-13 - Upgrade: Adopt changes from MDL-75671 in view-cards.mustache
+* 2024-10-10 - Upgrade: Adopt changes from MDL-81818 to remove old bootstrap classes
+* 2024-10-10 - Upgrade: Adopt changes from MDL-74251 to remove old icon classes
+* 2024-10-10 - Upgrade: Adopt changes from MDL-75671 in user_menu.mustache
+* 2024-10-10 - Upgrade: Adopt changes from MDL-75671 in user_action_menu_submenu_items.mustache
+* 2024-10-10 - Upgrade: Adopt changes from MDL-75671 in primary-drawer-mobile.mustache
+* 2024-10-10 - Upgrade: Adopt changes from MDL-75671 in drawers.mustache
+* 2024-10-10 - Upgrade: Adopt changes from MDL-75671 in upcoming_mini.mustache
+* 2024-10-10 - Upgrade: Adopt changes from MDL-74251 and MDL-75671 in loginform.mustache
+* 2024-10-10 - Upgrade: Adopt change from MDL-75671 in full_header.mustache
+* 2024-10-10 - Upgrade: Use the before_session_start() callback instead of the after_config() callback on Moodle 4.5, resolves #721.
+* 2024-10-10 - Upgrade: Adopt change from MDL-75671 in course_listitem_actions().
+* 2024-10-10 - Upgrade: Fix removed /cache/classes/loaders.php which prevented the theme from being used on Moodle 4.5, resolves #708.
+* 2024-10-07 - Prepare compatibility for Moodle 4.5.
 
 ### v4.4-r3
 
@@ -96,7 +550,7 @@ Changes
 * 2024-04-01 - Bugfix: In smart menus, the search for cohorts in restrict visibility by cohorts didn't work for more than 25 cohorts, resolves #462.
 * 2024-04-01 - Improvement: Enhance the activitynavigation setting description to cover section navigation as well, resolves #536.
 * 2024-03-30 - Bugfix: Smart menu divider did not work for user menu submenus, resolves #537.
-* 2024-03-25 - Upgrade: Boost Union settings were moved to an admin settings category of its own to support the new theme chooser on Moodle 4.4, resolves #482.
+* 2024-03-25 - Upgrade: Boost Union settings were moved to an admin settings category of its own to support the new theme chooser on Moodle 4.4, resolves #482.\
                Please note: This change is backported to Moodle 4.3 to 4.1 as well.
                Child theme support: If you are running a Boost Union Child theme, please make sure to adapt your child theme to our latest boilerplate.
 * 2024-03-22 - Upgrade: Migrate the before_standard_html_head() function to the new hook callback on Moodle 4.4, resolves #604.
@@ -130,7 +584,7 @@ Changes
 * 2024-02-12 - Feature: Allow the admin to display activity icons in course content navigation, resolves #16.
 * 2024-02-11 - Child theme support: Improve namespace of class smartmenu_helper, resolves #494.
 * 2024-02-11 - Child theme support: Update note about grandchild themes in README.md
-* 2024-02-09 - Improvement: Inherit preset setting and preset files from Boost Core instead of duplicating them into Boost Union, resolves #267.
+* 2024-02-09 - Improvement: Inherit preset setting and preset files from Boost Core instead of duplicating them into Boost Union, resolves #267.\
                Please note: The preset setting in Boost Union was practically broken up to now. Removing the duplicated setting should not break anything.
 * 2024-02-06 - Child theme support: Adapt favicon behat scenario to support Boost Union Child
 * 2024-01-30 - Child theme support: Don't force child themes to reimplement the settings to mark links and the settings to modify the course overview block, resolves #345.
@@ -288,7 +742,7 @@ Changes
 
 ### v4.1-r6
 
-* 2023-03-22 - Feature: Allow admin to provide several additional block regions, solves #30.
+* 2023-03-22 - Feature: Allow admin to provide several additional block regions, solves #30.\
                Please note: This is a comparably large addition. If you encounter any issues with this feature, please report it on <https://github.com/moodle-an-hochschulen/moodle-theme_boost_union/issues>.
 * 2023-03-20 - Improvement: Don't force child themes to reimplement various color settings (e.g. 'brandcolor'), solves #260.
 * 2023-03-17 - Improvement: Reduce code duplication when child theming by checking theme ancestry in theme_boost_union_before_standard_html_head, solves #245.

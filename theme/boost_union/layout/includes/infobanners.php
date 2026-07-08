@@ -26,12 +26,14 @@
 defined('MOODLE_INTERNAL') || die();
 
 // Require the necessary libraries.
-require_once($CFG->dirroot.'/theme/boost_union/locallib.php');
+require_once($CFG->dirroot . '/theme/boost_union/locallib.php');
 
 $config = get_config('theme_boost_union');
 
 // Initialize info banners data for templatecontext.
 $infobanners = [];
+$infobannersabove = [];
+$infobannersbelow = [];
 
 // Remember if we need the dismissible AMD module.
 $dismissibleamdneeded = false;
@@ -43,20 +45,20 @@ for ($i = 1; $i <= THEME_BOOST_UNION_SETTING_INFOBANNER_COUNT; $i++) {
         // Gather this info banner's data.
         // Info banner content.
         $formatoptions = ['noclean' => true, 'newlines' => false];
-        $contentsettingname = 'infobanner'.$i.'content';
+        $contentsettingname = 'infobanner' . $i . 'content';
         $content = format_text($config->{$contentsettingname}, FORMAT_HTML, $formatoptions);
 
         // Info banner Bootstrap class.
-        $bsclasssettingname = 'infobanner'.$i.'bsclass';
+        $bsclasssettingname = 'infobanner' . $i . 'bsclass';
         $bsclass = $config->{$bsclasssettingname};
 
         // Info banner ordering.
-        $ordersettingname = 'infobanner'.$i.'order';
+        $ordersettingname = 'infobanner' . $i . 'order';
         $order = $config->{$ordersettingname};
 
         // Info banner dismissible status (but not on the login page as the user preference can't be stored there).
         if ($PAGE->pagelayout != 'login') {
-            $dismissiblesettingname = 'infobanner'.$i.'dismissible';
+            $dismissiblesettingname = 'infobanner' . $i . 'dismissible';
             if ($config->{$dismissiblesettingname} == THEME_BOOST_UNION_SETTING_SELECT_YES) {
                 $dismissible = true;
             } else {
@@ -79,15 +81,35 @@ for ($i = 1; $i <= THEME_BOOST_UNION_SETTING_INFOBANNER_COUNT; $i++) {
         $infobanner->order = $order;
         $infobanner->dismissible = $dismissible;
         $infobanner->no = $i;
+
+        // Get the position setting for this specific banner.
+        $positionsettingname = 'infobanner' . $i . 'position';
+        $position = $config->{$positionsettingname};
+        if (empty($position)) {
+            $position = THEME_BOOST_UNION_SETTING_INFOBANNERPOSITION_ABOVE;
+        }
+
+        // Add banner to the appropriate array based on position setting.
+        if ($position == THEME_BOOST_UNION_SETTING_INFOBANNERPOSITION_BELOW) {
+            $infobannersbelow[$i] = $infobanner;
+        } else {
+            $infobannersabove[$i] = $infobanner;
+        }
+
+        // Also add to the main array for the login page and other layouts where above and below are not differentiated.
         $infobanners[$i] = $infobanner;
     }
 }
 
 // Reorder the info banners based on their order settings.
 usort($infobanners, 'theme_boost_union_compare_order');
+usort($infobannersabove, 'theme_boost_union_compare_order');
+usort($infobannersbelow, 'theme_boost_union_compare_order');
 
 // Add info banners data to templatecontext.
 $templatecontext['infobanners'] = $infobanners;
+$templatecontext['infobannersabove'] = $infobannersabove;
+$templatecontext['infobannersbelow'] = $infobannersbelow;
 
 // Add the dismissible AMD module to the page if needed.
 if ($dismissibleamdneeded == true) {

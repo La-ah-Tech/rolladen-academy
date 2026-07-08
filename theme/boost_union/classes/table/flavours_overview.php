@@ -26,10 +26,12 @@
 
 namespace theme_boost_union\table;
 
+use core\output\html_writer;
+
 defined('MOODLE_INTERNAL') || die();
 
 // Require table library.
-require_once($CFG->libdir.'/tablelib.php');
+require_once($CFG->libdir . '/tablelib.php');
 
 /**
  * List of flavours.
@@ -40,8 +42,7 @@ require_once($CFG->libdir.'/tablelib.php');
  * @copyright  based on code by bdecent gmbh <https://bdecent.de> in format_kickstart.
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class flavours_overview extends \table_sql {
-
+class flavours_overview extends \core_table\sql_table {
     /**
      * @var int $count Flavours count.
      */
@@ -67,7 +68,7 @@ class flavours_overview extends \table_sql {
         $headers[] = get_string('flavourstitle', 'theme_boost_union');
         $headers[] = get_string('flavoursdescription', 'theme_boost_union');
         $headers[] = get_string('flavoursappliesto', 'theme_boost_union');
-        $headers[] = get_string('up') .'/'. get_string('down');
+        $headers[] = get_string('up') . '/' . get_string('down');
         $headers[] = get_string('actions');
         $columns[] = 'title';
         $columns[] = 'description';
@@ -80,6 +81,7 @@ class flavours_overview extends \table_sql {
         $this->define_columns($columns);
         $this->define_headers($headers);
         $this->define_header_column('title');
+        $this->column_class('actions', 'text-nowrap');
 
         // Initialize values for the updown feature.
         $this->count = 0;
@@ -96,21 +98,30 @@ class flavours_overview extends \table_sql {
         global $OUTPUT;
 
         // Prepare action URL.
-        $actionurl = new \moodle_url('/theme/boost_union/flavours/overview.php');
+        $actionurl = new \core\url('/theme/boost_union/flavours/overview.php');
 
         // Initialize column value.
         $updown = '';
 
         // Get spacer icon.
-        $spacer = $OUTPUT->pix_icon('spacer', '', 'moodle', ['class' => 'iconsmall theme_boost_union-sortorderspacer']);
+        $spacer = $OUTPUT->pix_icon('spacer', '', 'moodle', ['class' => 'iconsmall me-0 theme_boost_union-sortorderspacer']);
 
         // If there is more than one flavour and we do not handle the first (number 0) flavour.
         if ($this->count > 0) {
             // Add the up icon.
-            $updown .= \html_writer::link($actionurl->out(false,
-                    ['action' => 'up', 'id' => $data->id, 'sesskey' => sesskey()]),
-                    $OUTPUT->pix_icon('t/up', get_string('up'), 'moodle',
-                            ['class' => 'iconsmall']), ['class' => 'sort-flavour-up-action']);
+            $updown .= html_writer::link(
+                $actionurl->out(
+                    false,
+                    ['action' => 'up', 'id' => $data->id, 'sesskey' => sesskey()]
+                ),
+                $OUTPUT->pix_icon(
+                    't/up',
+                    get_string('up'),
+                    'moodle',
+                    ['class' => 'iconsmall me-0']
+                ),
+                ['class' => 'sort-flavour-up-action']
+            );
 
             // Otherwise, just add a spacer.
         } else {
@@ -121,10 +132,19 @@ class flavours_overview extends \table_sql {
         if ($this->count < ($this->totalflavours - 1)) {
             // Add the down icon.
             $updown .= '&nbsp;';
-            $updown .= \html_writer::link($actionurl->out(false,
-                    ['action' => 'down', 'id' => $data->id, 'sesskey' => sesskey()]),
-                    $OUTPUT->pix_icon('t/down', get_string('down'), 'moodle',
-                            ['class' => 'iconsmall']), ['class' => 'sort-flavour-down-action']);
+            $updown .= html_writer::link(
+                $actionurl->out(
+                    false,
+                    ['action' => 'down', 'id' => $data->id, 'sesskey' => sesskey()]
+                ),
+                $OUTPUT->pix_icon(
+                    't/down',
+                    get_string('down'),
+                    'moodle',
+                    ['class' => 'iconsmall me-0']
+                ),
+                ['class' => 'sort-flavour-down-action']
+            );
 
             // Otherwise, just add a spacer.
         } else {
@@ -150,16 +170,20 @@ class flavours_overview extends \table_sql {
 
         // If apply-to-categories is enabled, add a badge.
         if ($data->applytocategories == true) {
-            $badges[] = \html_writer::tag('span',
-                    get_string('categories'),
-                    ['class' => 'badge bg-primary text-light']);
+            $badges[] = html_writer::tag(
+                'span',
+                get_string('categories'),
+                ['class' => 'badge bg-primary text-light']
+            );
         }
 
         // If apply-to-cohorts is enabled, add a badge.
         if ($data->applytocohorts == true) {
-            $badges[] = \html_writer::tag('span',
-                    get_string('cohorts', 'cohort'),
-                    ['class' => 'badge bg-primary text-light']);
+            $badges[] = html_writer::tag(
+                'span',
+                get_string('cohorts', 'cohort'),
+                ['class' => 'badge bg-primary text-light']
+            );
         }
 
         // Implode and return the badges.
@@ -182,25 +206,29 @@ class flavours_overview extends \table_sql {
 
         // Preview.
         $actions[] = [
-                'url' => new \moodle_url('/theme/boost_union/flavours/preview.php', ['id' => $data->id]),
-                'icon' => new \pix_icon('i/search', get_string('flavoursedit', 'theme_boost_union')),
-                'attributes' => ['class' => 'action-preview'],
+                'url' => new \core\url('/theme/boost_union/flavours/preview.php', ['id' => $data->id]),
+                'icon' => new \core\output\pix_icon('i/search', get_string('flavourspreview', 'theme_boost_union')),
+                'attributes' => ['class' => 'action-preview py-0 ps-0 ms-0 me-0'],
         ];
 
         // Edit.
         $actions[] = [
-                'url' => new \moodle_url('/theme/boost_union/flavours/edit.php',
-                        ['action' => 'edit', 'id' => $data->id, 'sesskey' => sesskey()]),
-                'icon' => new \pix_icon('t/edit', get_string('flavoursedit', 'theme_boost_union')),
-                'attributes' => ['class' => 'action-edit'],
+                'url' => new \core\url(
+                    '/theme/boost_union/flavours/edit.php',
+                    ['action' => 'edit', 'id' => $data->id, 'sesskey' => sesskey()]
+                ),
+                'icon' => new \core\output\pix_icon('t/edit', get_string('flavoursedit', 'theme_boost_union')),
+                'attributes' => ['class' => 'action-edit py-0 ms-0 me-0'],
         ];
 
         // Delete.
         $actions[] = [
-                'url' => new \moodle_url('/theme/boost_union/flavours/edit.php',
-                        ['action' => 'delete', 'id' => $data->id, 'sesskey' => sesskey()]),
-                'icon' => new \pix_icon('t/delete', get_string('flavourspreview', 'theme_boost_union')),
-                'attributes' => ['class' => 'action-delete'],
+                'url' => new \core\url(
+                    '/theme/boost_union/flavours/edit.php',
+                    ['action' => 'delete', 'id' => $data->id, 'sesskey' => sesskey()]
+                ),
+                'icon' => new \core\output\pix_icon('t/delete', get_string('flavoursdelete', 'theme_boost_union')),
+                'attributes' => ['class' => 'action-delete py-0 pe-0 ms-0 me-0'],
         ];
 
         // Compose action icons for all actions.
@@ -216,7 +244,7 @@ class flavours_overview extends \table_sql {
         }
 
         // Return all actions.
-        return \html_writer::span(join('', $actionshtml), 'flavours-actions');
+        return html_writer::span(join('', $actionshtml), 'flavours-actions');
     }
 
     /**
@@ -246,9 +274,10 @@ class flavours_overview extends \table_sql {
 
         // Show notification as html element.
         $notification = new \core\output\notification(
-                get_string('flavoursnothingtodisplay', 'theme_boost_union'), \core\output\notification::NOTIFY_INFO);
-        $notification->set_show_closebutton(false);
+            get_string('flavoursnothingtodisplay', 'theme_boost_union'),
+            \core\output\notification::NOTIFY_INFO,
+            false
+        );
         echo $OUTPUT->render($notification);
     }
-
 }

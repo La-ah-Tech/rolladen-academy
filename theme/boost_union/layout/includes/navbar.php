@@ -24,21 +24,53 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-// Compose the navbar color classes based on the navbarcolor setting.
+// Require flavours library.
+require_once($CFG->dirroot . '/theme/boost_union/flavours/flavourslib.php');
+
+// Pick the navbar color from the global setting.
 $navbarcolorsetting = get_config('theme_boost_union', 'navbarcolor');
-switch($navbarcolorsetting) {
+
+// If we are on MWP.
+if (\theme_boost_union\local\mwp::extension_present() == true) {
+    // Call the BU MWP class method only if the class and method exist.
+    if (
+        class_exists('\\local_boost_union_mwp\\local\\branding') &&
+            method_exists('\\local_boost_union_mwp\\local\\branding', 'get_overridden_navbarcolor')
+    ) {
+        // Get the potentially branding-overridden value for navbarcolor.
+        $navbarcolorsetting = \local_boost_union_mwp\local\branding::get_overridden_navbarcolor($navbarcolorsetting);
+    }
+}
+
+// If any flavour applies to this page and defines a non-empty navbar color.
+$flavour = theme_boost_union_get_flavour_which_applies();
+// If a flavour applies to this page and if a navbar color is set in the flavour.
+if (
+    $flavour != null &&
+        isset($flavour->look_navbarcolor) && $flavour->look_navbarcolor != THEME_BOOST_UNION_SETTING_SELECT_NOCHANGE
+) {
+    // Pick the navbar color from the flavour.
+    $navbarcolorsetting = $flavour->look_navbarcolor;
+}
+
+// Compose the navbar color classes based on the navbarcolor setting.
+switch ($navbarcolorsetting) {
     case THEME_BOOST_UNION_SETTING_NAVBARCOLOR_DARK:
-        $templatecontext['navbarcolorclasses'] = 'navbar-dark bg-dark';
+        $templatecontext['navbarcolorclasses'] = 'bg-dark';
+        $templatecontext['databstheme'] = 'dark';
         break;
-    case THEME_BOOST_UNION_SETTING_NAVBARCOLOR_PRIMARYLIGHT:
-        $templatecontext['navbarcolorclasses'] = 'navbar-light bg-primary';
+    case THEME_BOOST_UNION_SETTING_NAVBARCOLOR_COLOREDLIGHT:
+        $templatecontext['navbarcolorclasses'] = 'bg-primary';
+        $templatecontext['databstheme'] = 'light';
         break;
-    case THEME_BOOST_UNION_SETTING_NAVBARCOLOR_PRIMARYDARK:
-        $templatecontext['navbarcolorclasses'] = 'navbar-dark bg-primary';
+    case THEME_BOOST_UNION_SETTING_NAVBARCOLOR_COLOREDDARK:
+        $templatecontext['navbarcolorclasses'] = 'bg-primary';
+        $templatecontext['databstheme'] = 'dark';
         break;
     case THEME_BOOST_UNION_SETTING_NAVBARCOLOR_LIGHT:
     default:
-        $templatecontext['navbarcolorclasses'] = 'navbar-light bg-white';
+        $templatecontext['navbarcolorclasses'] = 'bg-body';
+        $templatecontext['databstheme'] = '';
         break;
 }
 
@@ -54,4 +86,11 @@ $showfullnameinusermenusetting = get_config('theme_boost_union', 'showfullnamein
 if ($showfullnameinusermenusetting == THEME_BOOST_UNION_SETTING_SELECT_YES) {
     // Set a flag in the templatecontext.
     $templatecontext['showfullnameinusermenu'] = true;
+}
+
+// If displaying the login link as button is activated.
+$loginlinkbuttonenabledsetting = get_config('theme_boost_union', 'loginlinkbuttonenabled');
+if ($loginlinkbuttonenabledsetting == THEME_BOOST_UNION_SETTING_SELECT_YES) {
+    // Set a flag in the templatecontext.
+    $templatecontext['loginlinkbuttonenabled'] = true;
 }

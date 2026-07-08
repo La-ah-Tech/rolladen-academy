@@ -31,7 +31,6 @@ use core_completion\activity_custom_completion;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class custom_completion extends activity_custom_completion {
-
     /**
      * Fetches the completion state for a given completion rule.
      *
@@ -73,11 +72,12 @@ class custom_completion extends activity_custom_completion {
 
     /**
      * Returns an array of all completion rules, in the order they should be displayed to users.
-     * For this activity, there are no custom rules.
      *
      * @return array
      */
     public function get_sort_order(): array {
-        return [];
+        return [
+            'completionview',
+        ];
     }
 }

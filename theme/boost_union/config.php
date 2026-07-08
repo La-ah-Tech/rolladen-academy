@@ -34,8 +34,23 @@ $THEME->name = 'boost_union';
 $THEME->sheets = [];
 $THEME->editor_sheets = [];
 // Note: $THEME->editor_scss is not needed. See #242 for the explanation.
-$THEME->usefallback = true;
-$THEME->scss = function($theme) {
+
+// If the referring page is an admin page or the snippets overview page, then we don't want to use the fallback CSS
+// as this would result in outdated CSS being delivered on the next page load after saving a setting
+// which would impede working with snippets and style settings.
+$pagewithoutthemefallback = false;
+$referrerurl = get_local_referer(false);
+if (!empty($referrerurl)) {
+    $referrerurl = new \core\url($referrerurl);
+    $settingsurl = new \core\url('/admin/settings.php');
+    $snippetsurl = new \core\url('/theme/boost_union/snippets/overview.php');
+    $pagewithoutthemefallback1 = $referrerurl->compare($settingsurl, URL_MATCH_BASE);
+    $pagewithoutthemefallback2 = $referrerurl->compare($snippetsurl, URL_MATCH_BASE);
+    $pagewithoutthemefallback = $pagewithoutthemefallback1 || $pagewithoutthemefallback2;
+}
+$THEME->usefallback = !$pagewithoutthemefallback;
+
+$THEME->scss = function ($theme) {
     return theme_boost_union_get_main_scss_content($theme);
 };
 
@@ -85,7 +100,7 @@ $THEME->layouts = [
     // My courses page.
     'mycourses' => [
         'file' => 'drawers.php',
-        'regions' => ['side-pre'],
+        'regions' => theme_boost_union_get_block_regions('mycourses'),
         'defaultregion' => 'side-pre',
         'options' => ['nonavbar' => true],
     ],
@@ -168,11 +183,39 @@ $THEME->layouts = [
     'secure' => [
         'file' => 'secure.php',
         'regions' => ['side-pre'],
-        'defaultregion' => 'side-pre'
+        'defaultregion' => 'side-pre',
+        'options' => [
+            'activityheader' => [
+                'notitle' => false,
+            ],
+        ],
     ]
 ];
 
-$THEME->parents = ['boost'];
+// Actively require the mwp class file.
+// We use require_once() to load the class actively, bypassing Moodle's autoloader and MUC class cache.
+// This avoids a fatal error if the plugin files were updated from a release without MWP support to a release with MWP support,
+// but without purging caches.
+$mwpclassfile = $CFG->dirroot . '/theme/boost_union/classes/local/mwp.php';
+if (file_exists($mwpclassfile)) {
+    require_once($mwpclassfile);
+}
+
+// If we are on MWP and the Workplace theme is present.
+if (
+    class_exists('\theme_boost_union\local\mwp') &&
+        \theme_boost_union\local\mwp::extension_present() == true &&
+        \theme_boost_union\local\mwp::themeworkplace_present() == true
+) {
+    // Set the parent themes to workplace and boost afterwards.
+    $THEME->parents = ['workplace', 'boost'];
+
+    // Otherwise.
+} else {
+    // Set the parent theme to boost only.
+    $THEME->parents = ['boost'];
+}
+
 $THEME->enable_dock = false;
 $THEME->extrascsscallback = 'theme_boost_union_get_extra_scss';
 $THEME->prescsscallback = 'theme_boost_union_get_pre_scss';
@@ -184,7 +227,27 @@ $THEME->addblockposition = BLOCK_ADDBLOCK_POSITION_FLATNAV;
 $THEME->iconsystem = \core\output\icon_system::FONTAWESOME;
 $THEME->haseditswitch = true;
 $THEME->usescourseindex = true;
-$THEME->removedprimarynavitems = explode(',', get_config('theme_boost_union', 'hidenodesprimarynavigation'));
+
+// During the initial installation, we can't access the config table yet, so we set an empty array.
+// Otherwise, we get the hidden primary navigation items from the config.
+$THEME->removedprimarynavitems = during_initial_install() ?
+        [] : explode(',', get_config('theme_boost_union', 'hidenodesprimarynavigation'));
+// If we are on MWP.
+if (
+    class_exists('\theme_boost_union\local\mwp') &&
+        \theme_boost_union\local\mwp::extension_present() == true
+) {
+    // Call the BU MWP class method only if the class and method exist.
+    if (
+        class_exists('\\local_boost_union_mwp\\local\\mwp') &&
+            method_exists('\\local_boost_union_mwp\\local\\mwp', 'config_postprocess_removedprimarynavitems')
+    ) {
+        // Post-process the setting.
+        $THEME->removedprimarynavitems =
+                \local_boost_union_mwp\local\mwp::config_postprocess_removedprimarynavitems($THEME->removedprimarynavitems);
+    }
+}
+
 // By default, all boost theme do not need their titles displayed.
 $THEME->activityheaderconfig = [
     'notitle' => true

@@ -36,7 +36,6 @@ function xmldb_unilabeltype_carousel_upgrade($oldversion) {
     $dbman = $DB->get_manager();
 
     if ($oldversion < 2023121501) {
-
         // Define field sortorder to be added to unilabeltype_carousel_tile.
         $table = new xmldb_table('unilabeltype_carousel_slide');
         $field = new xmldb_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'carouselid');
@@ -51,7 +50,6 @@ function xmldb_unilabeltype_carousel_upgrade($oldversion) {
     }
 
     if ($oldversion < 2024012400) {
-
         // Define field sortorder to be added to unilabeltype_carousel_slide.
         $table = new xmldb_table('unilabeltype_carousel_slide');
         $field = new xmldb_field('newwindow', XMLDB_TYPE_INTEGER, '1', null, null, null, null, 'url');
@@ -66,7 +64,6 @@ function xmldb_unilabeltype_carousel_upgrade($oldversion) {
     }
 
     if ($oldversion < 2024050700) {
-
         // Define field captionstyle to be added to unilabeltype_carousel.
         $table = new xmldb_table('unilabeltype_carousel');
         $field = new xmldb_field('captionstyle', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'background');
@@ -88,8 +85,7 @@ function xmldb_unilabeltype_carousel_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2024050700, 'unilabeltype', 'carousel');
     }
 
-    if ($oldversion < 2024050804) {
-
+    if ($oldversion < 2024122600) {
         // Define field urltitle to be added to unilabeltype_carousel_slide.
         $table = new xmldb_table('unilabeltype_carousel_slide');
         $field = new xmldb_field('urltitle', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'caption');
@@ -100,11 +96,10 @@ function xmldb_unilabeltype_carousel_upgrade($oldversion) {
         }
 
         // Carousel savepoint reached.
-        upgrade_plugin_savepoint(true, 2024050804, 'unilabeltype', 'carousel');
+        upgrade_plugin_savepoint(true, 2024122600, 'unilabeltype', 'carousel');
     }
 
-    if ($oldversion < 2024050900) {
-
+    if ($oldversion < 2025030800) {
         // Define field visible to be added to unilabeltype_carousel_slide.
         $table = new xmldb_table('unilabeltype_carousel_slide');
         $field = new xmldb_field('visible', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'urltitle');
@@ -115,7 +110,19 @@ function xmldb_unilabeltype_carousel_upgrade($oldversion) {
         }
 
         // Accordion savepoint reached.
-        upgrade_plugin_savepoint(true, 2024050900, 'unilabeltype', 'carousel');
+        upgrade_plugin_savepoint(true, 2025030800, 'unilabeltype', 'carousel');
+    }
+
+    if ($oldversion < 2025042211) {
+        $table = new xmldb_table('unilabeltype_carousel');
+        $key = new xmldb_key('unilabelid', XMLDB_KEY_FOREIGN_UNIQUE, ['unilabelid'], 'unilabel', ['id']);
+        $dbman->add_key($table, $key);
+
+        $table = new xmldb_table('unilabeltype_carousel_slide');
+        $key = new xmldb_key('carouselid', XMLDB_KEY_FOREIGN, ['carouselid'], 'unilabeltype_carousel', ['id']);
+        $dbman->add_key($table, $key);
+
+        upgrade_plugin_savepoint(true, 2025042211, 'unilabeltype', 'carousel');
     }
 
     return true;

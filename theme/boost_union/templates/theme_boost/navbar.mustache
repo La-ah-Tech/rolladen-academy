@@ -61,33 +61,34 @@
     Modifications compared to the original template:
     * Added the possibility to change navbar color.
     * Include button for off-canvas region.
-    * Removed the primary menu drawer hamburger menu, added bottom bar more section will help users to open the nav drawer.
-    * Display the logo on mobile viewport. (removed d-none, changed d-md-flex to d-flex)
+    * If a smart menu is configured as bottom bar, disable the hamburger menu on mobile viewport.
+    * If a smart menu is configured as bottom bar, display the logo on mobile viewport instead of the hamburger menu icon (removed d-none, changed d-md-flex to d-flex)
     * Added menu bar section.
     * Added the possibility to use an alternative logo link URL.
+    * Added the possibility to set a maximal width for the sitename in the navbar to prevent layout breaking on medium-width screens.
 }}
 
 {{#menubar}}
-<nav class="menubar fixed-top boost-union-menubar navbar navbar-expand {{#bottombar.drawer}} smartmenu-bottom-navigation {{/bottombar.drawer}}">
+<nav class="menubar fixed-top boost-union-menubar navbar navbar-expand {{#bottombar.drawer}} smartmenu-bottom-navigation {{/bottombar.drawer}} {{{menubar.classes}}}">
     {{> core/moremenu}}
 </nav>
 {{/menubar}}
-<nav class="navbar fixed-top {{navbarcolorclasses}} navbar-expand {{#bottombar.drawer}} smartmenu-bottom-navigation {{/bottombar.drawer}}" aria-label="{{#str}}sitemenubar, admin{{/str}}">
+<nav class="navbar fixed-top {{navbarcolorclasses}} navbar-expand {{#bottombar.drawer}} smartmenu-bottom-navigation {{/bottombar.drawer}}" {{#databstheme}}data-bs-theme="{{databstheme}}"{{/databstheme}} aria-label="{{#str}}sitemenubar, admin{{/str}}">
     <div class="container-fluid">
         {{^bottombar.drawer}}
         <button class="navbar-toggler aabtn d-block d-md-none px-1 my-1 border-0" data-toggler="drawers" data-action="toggle" data-target="theme_boost-drawers-primary">
             <span class="navbar-toggler-icon"></span>
-            <span class="sr-only">{{#str}}sidepanel, core{{/str}}</span>
+            <span class="visually-hidden">{{#str}}sidepanel, core{{/str}}</span>
         </button>
         {{/bottombar.drawer}}
 
-        <a href="{{#alternativelogolinkurl}}{{{alternativelogolinkurl}}}{{/alternativelogolinkurl}}{{^alternativelogolinkurl}}{{{ config.homeurl }}}{{/alternativelogolinkurl}}" class="navbar-brand align-items-center m-0 mr-4 p-0 aabtn {{#bottombar.drawer}} d-flex {{/bottombar.drawer}} {{^bottombar.drawer}} d-none d-md-flex {{/bottombar.drawer}} ">
+        <a href="{{#alternativelogolinkurl}}{{{alternativelogolinkurl}}}{{/alternativelogolinkurl}}{{^alternativelogolinkurl}}{{{ config.homeurl }}}{{/alternativelogolinkurl}}" class="navbar-brand align-items-center m-0 me-4 p-0 aabtn {{#bottombar.drawer}} d-flex {{/bottombar.drawer}} {{^bottombar.drawer}} d-none d-md-flex {{/bottombar.drawer}} ">
 
             {{# output.should_display_navbar_logo }}
-                <img src="{{output.get_compact_logo_url}}" class="logo mr-1" alt="{{sitename}}">
+                <img src="{{output.get_compact_logo_url}}" class="logo me-1" alt="{{sitename}}">
             {{/ output.should_display_navbar_logo }}
             {{^ output.should_display_navbar_logo }}
-                {{{ sitename }}}
+                <span class="sitename">{{{ sitename }}}</span>
             {{/ output.should_display_navbar_logo }}
         </a>
         {{#primarymoremenu}}
@@ -96,19 +97,21 @@
             </div>
         {{/primarymoremenu}}
 
-        <ul class="navbar-nav d-none d-md-flex my-1 px-1">
-            <!-- page_heading_menu -->
-            {{{ output.page_heading_menu }}}
-        </ul>
+        {{# output.page_heading_menu}}
+            <ul class="navbar-nav d-none d-md-flex my-1 px-1">
+                <!-- page_heading_menu -->
+                {{{ output.page_heading_menu }}}
+            </ul>
+        {{/output.page_heading_menu}}
 
-        <div id="usernavigation" class="navbar-nav ml-auto">
+        <div id="usernavigation" class="navbar-nav ms-auto h-100">
             {{# output.search_box }}
                 {{{ output.search_box }}}
-                <div class="divider border-left h-75 align-self-center mx-1"></div>
+                <div class="divider border-start h-75 align-self-center mx-1"></div>
             {{/output.search_box}}
             {{#langmenu}}
                 {{> theme_boost/language_menu }}
-                <div class="divider border-left h-75 align-self-center mx-1"></div>
+                <div class="divider border-start h-75 align-self-center mx-1"></div>
             {{/langmenu}}
             {{{ output.navbar_plugin_output }}}
             <div class="d-flex align-items-stretch usermenu-container" data-region="usermenu">
@@ -120,7 +123,7 @@
 
             {{^userisediting}}
                 {{#regions.offcanvas.hasblocks}}
-                    <div class="divider border-left h-75 align-self-center mx-1"></div>
+                    <div class="divider border-start h-75 align-self-center mx-1"></div>
                     <div class="drawer-offcanvas-toggle d-print-none">
                         <button
                             class="btn"
@@ -129,10 +132,10 @@
                             title="{{#str}}openoffcanvas, theme_boost_union{{/str}}"
                             data-action="toggle"
                             data-target="theme_boost_union-drawers-offcanvas"
-                            data-toggle="tooltip"
-                            data-placement="bottom"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="bottom"
                         >
-                            <span class="sr-only">{{#str}}openoffcanvas, theme_boost_union{{/str}}</span>
+                            <span class="visually-hidden">{{#str}}openoffcanvas, theme_boost_union{{/str}}</span>
                             <i class="fa fa-grip"></i>
                         </button>
                     </div>
@@ -140,18 +143,18 @@
             {{/userisediting}}
             {{#userisediting}}
                 {{#regions.offcanvas.hasblocks}}
-                    <div class="divider border-left h-75 align-self-center mx-1"></div>
+                    <div class="divider border-start h-75 align-self-center mx-1"></div>
                     <div class="drawer-offcanvas-toggle d-print-none">
                         <button
                             class="btn"
                             id="theme_boost_union-offcanvas-btn"
-                            data-toggle="collapse"
+                            data-bs-toggle="collapse"
                             title="{{#str}}openoffcanvas, theme_boost_union{{/str}}"
-                            data-target="#theme-block-region-offcanvas-editing"
+                            data-bs-target="#theme-block-region-offcanvas-editing"
                             aria-expanded="false"
                             aria-controls="theme-block-region-offcanvas-editing"
                         >
-                            <span class="sr-only">{{#str}}openoffcanvas, theme_boost_union{{/str}}</span>
+                            <span class="visually-hidden">{{#str}}openoffcanvas, theme_boost_union{{/str}}</span>
                             <i class="fa fa-grip"></i>
                         </button>
                     </div>

@@ -22,22 +22,20 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(__DIR__.'/../../config.php');
+// Require config.
+require(__DIR__ . '/../../config.php');
 
-// Require login.
-require_login();
+// Require admin library.
+require_once($CFG->libdir . '/adminlib.php');
 
 // Get system context.
 $context = context_system::instance();
 
-// Require the necessary capability to configure the theme (or an admin account which has this capability automatically).
-require_capability('theme/boost_union:configure', $context);
+// Access checks.
+admin_externalpage_setup('theme_boost_union_overview');
 
 // Set page URL.
 $PAGE->set_url('/theme/boost_union/settings_overview.php');
-
-// Set page layout.
-$PAGE->set_pagelayout('admin');
 
 // Set page context.
 $PAGE->set_context($context);
@@ -51,42 +49,64 @@ echo $OUTPUT->header();
 // Show page heading.
 echo $OUTPUT->heading(get_string('settingsoverview_title', 'theme_boost_union'));
 
+// Boost Union page alerts.
+echo theme_boost_union_is_not_active_alert();
+echo theme_boost_union_recommendations_alert();
+
 // First, compose template context for Boost Union setting pages.
 $templatecontext['cards'][] = [
     'label' => get_string('configtitlelook', 'theme_boost_union'),
     'desc' => get_string('settingsoverview_look_desc', 'theme_boost_union'),
     'btn' => 'primary',
-    'url' => new \moodle_url('/admin/settings.php', ['section' => 'theme_boost_union_look']),
+    'url' => new \core\url('/admin/settings.php', ['section' => 'theme_boost_union_look']),
 ];
 $templatecontext['cards'][] = [
     'label' => get_string('configtitlefeel', 'theme_boost_union'),
     'desc' => get_string('settingsoverview_feel_desc', 'theme_boost_union'),
     'btn' => 'primary',
-    'url' => new \moodle_url('/admin/settings.php', ['section' => 'theme_boost_union_feel']),
+    'url' => new \core\url('/admin/settings.php', ['section' => 'theme_boost_union_feel']),
 ];
 $templatecontext['cards'][] = [
     'label' => get_string('configtitlecontent', 'theme_boost_union'),
     'desc' => get_string('settingsoverview_content_desc', 'theme_boost_union'),
     'btn' => 'primary',
-    'url' => new \moodle_url('/admin/settings.php', ['section' => 'theme_boost_union_content']),
+    'url' => new \core\url('/admin/settings.php', ['section' => 'theme_boost_union_content']),
 ];
 $templatecontext['cards'][] = [
     'label' => get_string('configtitlefunctionality', 'theme_boost_union'),
     'desc' => get_string('settingsoverview_functionality_desc', 'theme_boost_union'),
     'btn' => 'primary',
-    'url' => new \moodle_url('/admin/settings.php', ['section' => 'theme_boost_union_functionality']),
+    'url' => new \core\url('/admin/settings.php', ['section' => 'theme_boost_union_functionality']),
+];
+$templatecontext['cards'][] = [
+    'label' => get_string('configtitleaccessibility', 'theme_boost_union'),
+    'desc' => get_string('settingsoverview_accessibility_desc', 'theme_boost_union'),
+    'btn' => 'primary',
+    'url' => new \core\url('/admin/settings.php', ['section' => 'theme_boost_union_accessibility']),
 ];
 $templatecontext['cards'][] = [
     'label' => get_string('configtitleflavours', 'theme_boost_union'),
     'desc' => get_string('settingsoverview_flavours_desc', 'theme_boost_union'),
     'btn' => 'primary',
-    'url' => new \moodle_url('/theme/boost_union/flavours/overview.php'),
+    'url' => new \core\url('/theme/boost_union/flavours/overview.php'),
+];
+$templatecontext['cards'][] = [
+    'label' => get_string('configtitlesnippets', 'theme_boost_union'),
+    'desc' => get_string('settingsoverview_snippets_desc', 'theme_boost_union'),
+    'btn' => 'primary',
+    'url' => new \moodle_url('/theme/boost_union/snippets/overview.php'),
 ];
 $templatecontext['cards'][] = [
     'label' => get_string('smartmenus', 'theme_boost_union'),
     'desc' => get_string('settingsoverview_smartmenus_desc', 'theme_boost_union'),
     'btn' => 'primary',
-    'url' => new \moodle_url('/theme/boost_union/smartmenus/menus.php'),
+    'url' => new \core\url('/theme/boost_union/smartmenus/menus.php'),
+];
+$templatecontext['cards'][] = [
+    'label' => get_string('recommendations', 'theme_boost_union'),
+    'desc' => get_string('settingsoverview_recommendations_desc', 'theme_boost_union'),
+    'btn' => 'primary',
+    'url' => new \core\url('/theme/boost_union/recommendations/overview.php'),
 ];
 
 // Then, add additional cards from Boost Union Child themes.
@@ -107,7 +127,7 @@ $templatecontext['cards'][] = [
     'label' => get_string('settingsoverview_all', 'theme_boost_union'),
     'desc' => get_string('settingsoverview_all_desc', 'theme_boost_union'),
     'btn' => 'secondary',
-    'url' => new \moodle_url('/admin/category.php', ['category' => 'theme_boost_union']),
+    'url' => new \core\url('/admin/category.php', ['category' => 'theme_boost_union']),
 ];
 
 // Render template.

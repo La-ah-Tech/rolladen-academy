@@ -66,7 +66,7 @@
         <p>{{#str}} tabstylebuttons_help, format_onetopic {{/str}}</p>
     {{/readonly}}
 
-    <h3>{{#str}} tabsview_default, format_onetopic {{/str}}</h3>
+    <h3>{{#str}}tabsview, format_onetopic{{/str}} <em>{{#str}} tabsview_default, format_onetopic {{/str}}</em></h3>
     <div id="tabs-example" class="hastopictabs">
         <div class="tabs-wrapper">
             {{>format_onetopic/courseformat/tabtree}}
@@ -80,7 +80,7 @@
 
     </div>
 
-    <h3>{{#str}} tabsview_vertical, format_onetopic {{/str}}</h3>
+    <h3>{{#str}}tabsview, format_onetopic{{/str}} <em>{{#str}} tabsview_vertical, format_onetopic {{/str}}</em></h3>
     <div id="tabs-example-vertical" class="verticaltabs hastopictabs">
         <div class="tabs-wrapper">
             {{>format_onetopic/courseformat/tabtree}}
@@ -95,13 +95,13 @@
     </div>
 
     <div id="onetopic-styleswindow" class="hidden" data-title="{{#str}} tabstylestitle, format_onetopic {{/str}}">
-        <div class="form-group">
+        <div>
             <fieldset>
                 <legend>{{#str}} cssbackground, format_onetopic {{/str}}</legend>
                 <input class="form-control" type="text" data-style="background-color" data-control="colorpicker" placeholder="{{#str}} csscolor, format_onetopic {{/str}}" title="{{#str}} csscolor, format_onetopic {{/str}}">
             </fieldset>
         </div>
-        <div class="form-group">
+        <div>
             <fieldset>
                 <legend>{{#str}} cssfont, format_onetopic {{/str}}</legend>
                 <div>
@@ -137,7 +137,7 @@
                 </div>
             </fieldset>
         </div>
-        <div class="form-group">
+        <div>
             <fieldset>
                 <legend>{{#str}} cssborder, format_onetopic {{/str}}</legend>
                 <div>
@@ -187,7 +187,7 @@
                 </div>
             </fieldset>
         </div>
-        <div class="form-group">
+        <div>
             <fieldset>
                 <legend>{{#str}} cssother, format_onetopic {{/str}}</legend>
                 <input class="form-control" type="text" data-style="others" placeholder="{{#str}} cssother, format_onetopic {{/str}}" title="{{#str}} cssother, format_onetopic {{/str}}">

@@ -33,7 +33,6 @@ namespace unilabeltype_imageboard\output;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class edit_element extends \mod_unilabel\output\edit_element_base {
-
     /**
      * Get the name of the elements group.
      *
@@ -67,7 +66,9 @@ class edit_element extends \mod_unilabel\output\edit_element_base {
 
         $elements[] = $this->get_textfield(
             'alt',
-            ['size' => 255]
+            ['size' => 255],
+            false,
+            get_string('alt', $this->component)
         );
 
         // The position and the target are grouped elements built by:
@@ -82,7 +83,7 @@ class edit_element extends \mod_unilabel\output\edit_element_base {
             'yposition',
             ['size' => 4, 'placeholder' => get_string('placeholder_yposition', $this->component)]
         );
-        $elements[] = $this->get_group('position', [$xposition, $yposition], null, false, 'position');
+        $elements[] = $this->get_group('position', [$xposition, $yposition], null, get_string('position', $this->component));
 
         $targetwidth = $this->get_textfield(
             'targetwidth',
@@ -92,18 +93,29 @@ class edit_element extends \mod_unilabel\output\edit_element_base {
             'targetheight',
             ['size' => 4, 'placeholder' => get_string('placeholder_targetheight', $this->component)]
         );
-        $elements[] = $this->get_group('targetsize', [$targetwidth, $targetheight], null, false, 'targetsize');
+        $elements[] = $this->get_group(
+            'targetsize',
+            [$targetwidth, $targetheight],
+            null,
+            get_string('targetsize', $this->component)
+        );
 
         $numbers = array_combine(range(0, 10, 1), range(0, 10, 1));
-        $elements[] = $this->get_select(
+        $targetborderwidth = $this->get_select(
             'border',
             $numbers
         );
 
         $numbers = array_combine(range(0, 30, 1), range(0, 30, 1));
-        $elements[] = $this->get_select(
+        $targetborderradius = $this->get_select(
             'borderradius',
             $numbers
+        );
+        $elements[] = $this->get_group(
+            'bordersettings',
+            [$targetborderwidth, $targetborderradius],
+            null,
+            get_string('bordersettings', $this->component)
         );
 
         $elements[] = $this->get_static(
@@ -122,6 +134,7 @@ class edit_element extends \mod_unilabel\output\edit_element_base {
             '',
             get_string('newwindow')
         );
+        // The urlgroup should still show the number of the image.
         $elements[] = $this->get_group(
             'urlgroup',
             [$urlelement, $newwindowelement],
@@ -130,7 +143,9 @@ class edit_element extends \mod_unilabel\output\edit_element_base {
         );
         $elements[] = $this->get_textfield(
             'urltitle',
-            ['size' => 50]
+            ['size' => 50],
+            false,
+            get_string('urltitle', $this->component)
         );
 
         return $elements;
@@ -149,5 +164,4 @@ class edit_element extends \mod_unilabel\output\edit_element_base {
             'accepted_types' => ['web_image'],
         ];
     }
-
 }

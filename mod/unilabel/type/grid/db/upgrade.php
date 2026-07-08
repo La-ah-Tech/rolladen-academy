@@ -59,7 +59,6 @@ function xmldb_unilabeltype_grid_upgrade($oldversion) {
     }
 
     if ($oldversion < 2023121501) {
-
         // Define field sortorder to be added to unilabeltype_grid_tile.
         $table = new xmldb_table('unilabeltype_grid_tile');
         $field = new xmldb_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'gridid');
@@ -74,7 +73,6 @@ function xmldb_unilabeltype_grid_upgrade($oldversion) {
     }
 
     if ($oldversion < 2024012400) {
-
         // Define field sortorder to be added to unilabeltype_grid_tile.
         $table = new xmldb_table('unilabeltype_grid_tile');
         $field = new xmldb_field('newwindow', XMLDB_TYPE_INTEGER, '1', null, null, null, null, 'url');
@@ -88,8 +86,7 @@ function xmldb_unilabeltype_grid_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2024012400, 'unilabeltype', 'grid');
     }
 
-    if ($oldversion < 2024050804) {
-
+    if ($oldversion < 2024122600) {
         // Define field urltitle to be added to unilabeltype_grid_tile.
         $table = new xmldb_table('unilabeltype_grid_tile');
         $field = new xmldb_field('urltitle', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'title');
@@ -100,11 +97,10 @@ function xmldb_unilabeltype_grid_upgrade($oldversion) {
         }
 
         // Grid savepoint reached.
-        upgrade_plugin_savepoint(true, 2024050804, 'unilabeltype', 'grid');
+        upgrade_plugin_savepoint(true, 2024122600, 'unilabeltype', 'grid');
     }
 
-    if ($oldversion < 2024050900) {
-
+    if ($oldversion < 2025030800) {
         // Define field visible to be added to unilabeltype_grid_tile.
         $table = new xmldb_table('unilabeltype_grid_tile');
         $field = new xmldb_field('visible', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'content');
@@ -115,7 +111,33 @@ function xmldb_unilabeltype_grid_upgrade($oldversion) {
         }
 
         // Accordion savepoint reached.
-        upgrade_plugin_savepoint(true, 2024050900, 'unilabeltype', 'grid');
+        upgrade_plugin_savepoint(true, 2025030800, 'unilabeltype', 'grid');
+    }
+
+    if ($oldversion < 2025042211) {
+        $table = new xmldb_table('unilabeltype_grid');
+        $key = new xmldb_key('unilabelid', XMLDB_KEY_FOREIGN_UNIQUE, ['unilabelid'], 'unilabel', ['id']);
+        $dbman->add_key($table, $key);
+
+        $table = new xmldb_table('unilabeltype_grid_tile');
+        $key = new xmldb_key('gridid', XMLDB_KEY_FOREIGN, ['gridid'], 'unilabeltype_grid', ['id']);
+        $dbman->add_key($table, $key);
+
+        upgrade_plugin_savepoint(true, 2025042211, 'unilabeltype', 'grid');
+    }
+
+    if ($oldversion < 2025042213) {
+        // Define field useajax to be added to unilabeltype_grid.
+        $table = new xmldb_table('unilabeltype_grid');
+        $field = new xmldb_field('useajax', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'usemobile');
+
+        // Conditionally launch add field useajax.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Grid savepoint reached.
+        upgrade_plugin_savepoint(true, 2025042213, 'unilabeltype', 'grid');
     }
 
     return true;

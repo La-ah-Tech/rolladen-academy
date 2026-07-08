@@ -79,12 +79,19 @@ class question_category_selector implements renderable, templatable {
         global $DB;
 
         $contextids = explode(',', $contexts);
-        foreach ($contextids as $contextid) {
-            $context = context::instance_by_id($contextid);
-            if ($context->contextlevel === CONTEXT_MODULE) {
-                $validcontexts[] = $contextid;
-            }
+        /*echo '<pre>';
+            print_r($contextids);
+        echo '</pre>';
+        exit;*/
+        if(isset($contextids[0]) && $contextids[0] !== ''){
+            foreach ($contextids as $contextid) {
+                $context = context::instance_by_id($contextid);
+                if ($context->contextlevel === CONTEXT_MODULE) {
+                    $validcontexts[] = $contextid;
+                }
+            }    
         }
+        
         if (empty($validcontexts)) {
             return [];
         }

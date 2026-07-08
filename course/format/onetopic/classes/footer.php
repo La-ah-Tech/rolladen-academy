@@ -36,7 +36,6 @@ use course_modinfo;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class footer implements \renderable, \templatable {
-
     /**
      * @var \format_onetopic
      */
@@ -68,9 +67,9 @@ class footer implements \renderable, \templatable {
             'uniqid' => $format->uniqid,
             'sectionreturn' => $currentsection ?? 0,
             'hastopictabs' => $format->hastopictabs,
+            'hassecondrow' => $format->hassecondrow,
         ];
 
         return $data;
     }
-
 }

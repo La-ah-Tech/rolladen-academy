@@ -33,28 +33,22 @@ use core_privacy\local\request\helper;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Implementation of the privacy subsystem plugin provider for the lightboxgallery activity module.
  *
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
-        // This plugin stores personal data.
-        \core_privacy\local\metadata\provider,
-        \core_privacy\local\request\core_userlist_provider,
-
-        // This plugin is a core_user_data_provider.
-        \core_privacy\local\request\plugin\provider {
-
+    \core_privacy\local\request\core_userlist_provider,
+    \core_privacy\local\metadata\provider,
+    \core_privacy\local\request\plugin\provider {
     /**
      * Return the fields which contain personal data.
      *
      * @param collection $items a reference to the collection to use to store the metadata.
      * @return collection the updated collection of metadata items.
      */
-    public static function get_metadata(collection $items) : collection {
+    public static function get_metadata(collection $items): collection {
         $items->add_database_table(
             'lightboxgallery_comments',
             [
@@ -75,7 +69,7 @@ class provider implements
      * @param int $userid the userid.
      * @return contextlist the list of contexts containing user info for the user.
      */
-    public static function get_contexts_for_userid(int $userid) : contextlist {
+    public static function get_contexts_for_userid(int $userid): contextlist {
         // Fetch all lightboxgallery comments.
         $sql = "SELECT c.id
                 FROM {context} c
@@ -110,7 +104,7 @@ class provider implements
 
         $user = $contextlist->get_user();
 
-        list($contextsql, $contextparams) = $DB->get_in_or_equal($contextlist->get_contextids(), SQL_PARAMS_NAMED);
+        [$contextsql, $contextparams] = $DB->get_in_or_equal($contextlist->get_contextids(), SQL_PARAMS_NAMED);
 
         $sql = "SELECT cm.id AS cmid,
                        lbgc.commenttext,
@@ -245,13 +239,20 @@ class provider implements
         }
 
         // Prepare the SQL we'll need below.
-        list($insql, $inparams) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+        [$insql, $inparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
         $sql = "gallery = :instanceid AND userid {$insql}";
         $params = array_merge($inparams, ['instanceid' => $instanceid]);
 
         $DB->delete_records_select('lightboxgallery_comments', $sql, $params);
     }
 
+    /**
+     * Get the lightboxgallery id from the context.
+     *
+     * @param \context_module $context
+     * @return int
+     * @throws \coding_exception
+     */
     protected static function get_lightboxgallery_id_from_context(\context_module $context) {
         $cm = get_coursemodule_from_id('lightboxgallery', $context->instanceid);
         return $cm ? (int) $cm->instance : 0;

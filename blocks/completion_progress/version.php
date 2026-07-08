@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
 /**
  * Completion Progress block version details
  *
@@ -25,8 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version   = 2024042200;
-$plugin->requires  = 2022112800;
+$plugin->version   = 2026042700;
+$plugin->requires  = 2024100700;
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = 'Version for Moodle 4.1 onwards';
+$plugin->release   = 'Version for Moodle 4.5 onwards';
 $plugin->component = 'block_completion_progress';
+$plugin->supported = [405, 502];

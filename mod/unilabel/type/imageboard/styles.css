@@ -9,7 +9,7 @@
 .unilabel-imageboard-list-nr {
     width: 30px;
 }
-.unilabeltype-imageboard-controllbuttons {
+#unilabeltype-imageboard-controllbuttons {
     margin-bottom: 38px;
     z-index: 1;
     position: relative;
@@ -22,6 +22,10 @@
 
 .unilabel-imageboard-image.hidden {
     visibility: hidden;
+}
+
+#unilabeltype-imageboard-controllbuttons .form-text {
+    margin-top: 0;
 }
 
 .unilabeltype-imageboard-container {
@@ -86,7 +90,7 @@
 #unilabel-imageboard-preview .image-container {
     position: relative;
     display: inline-block;
-    cursor: grab;
+    cursor: move;
 }
 
 /* Bild-Stil */
@@ -148,4 +152,17 @@
 
 .unilabeltype-imageboard-helpergrid-rectangle {
     z-index: 0;
+}
+
+/* Remove text Accepted file types and limit infos in filemanager */
+#unilabeltype_imageboard_modal fieldset[id^="id_unilabeltype_imageboard_image_"] .fp-restrictions,
+#unilabeltype_imageboard_modal fieldset[id^="id_unilabeltype_imageboard_image_"] p,
+#unilabeltype_imageboard_modal .form-filetypes-descriptions {
+    display: none;
+}
+/* Reduce spaces between form elements */
+#unilabeltype_imageboard_modal .mb-3[id^="fgroup"],
+#unilabeltype_imageboard_modal .mb-3[id^="fitem"] {
+    /* We neutralize the margin-bottom from bootstrap which is 1rem. */
+    margin-top: -0.9rem;
 }

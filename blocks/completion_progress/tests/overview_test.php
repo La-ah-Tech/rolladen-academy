@@ -28,9 +28,11 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/mod/assign/locallib.php');
-require_once($CFG->dirroot.'/blocks/moodleblock.class.php');
-require_once($CFG->dirroot.'/blocks/completion_progress/block_completion_progress.php');
+require_once($CFG->dirroot . '/blocks/moodleblock.class.php');
+require_once($CFG->dirroot . '/blocks/completion_progress/block_completion_progress.php');
 
+use core_table\local\filter\filter;
+use core_table\local\filter\integer_filter;
 use block_completion_progress\completion_progress;
 use block_completion_progress\defaults;
 
@@ -75,9 +77,12 @@ final class overview_test extends \advanced_testcase {
      * Create a course and add enrol users to it.
      */
     protected function setUp(): void {
+        parent::setUp();
+
         $this->resetAfterTest(true);
 
         set_config('enablecompletion', 1);
+        set_config('enablenotes', 1);
 
         $generator = $this->getDataGenerator();
 
@@ -86,14 +91,22 @@ final class overview_test extends \advanced_testcase {
         ]);
 
         $this->teachers[0] = $generator->create_and_enrol($this->course, 'teacher');
+        $this->setUser($this->teachers[0]);
 
         $this->groups[0] = $generator->create_group(['courseid' => $this->course->id]);
         $this->groups[1] = $generator->create_group(['courseid' => $this->course->id]);
 
         for ($i = 0; $i < self::STUDENT_COUNT; $i++) {
             $status = $i >= 3 ? ENROL_USER_SUSPENDED : null;
-            $this->students[$i] = $generator->create_and_enrol($this->course, 'student',
-                null, 'manual', 0, 0, $status);
+            $this->students[$i] = $generator->create_and_enrol(
+                $this->course,
+                'student',
+                null,
+                'manual',
+                0,
+                0,
+                $status
+            );
 
             // Students are put into even/odd groups.
             $generator->create_group_member([
@@ -123,9 +136,7 @@ final class overview_test extends \advanced_testcase {
      * @covers \block_completion_progress\table\overview
      */
     public function test_overview_options(): void {
-        global $DB, $PAGE;
-
-        $output = $PAGE->get_renderer('block_completion_progress');
+        global $PAGE;
 
         // Add a block.
         $context = \context_course::instance($this->course->id);
@@ -140,7 +151,7 @@ final class overview_test extends \advanced_testcase {
             'configdata' => base64_encode(serialize((object)[
                 'orderby' => defaults::ORDERBY,
                 'longbars' => defaults::LONGBARS,
-                'progressBarIcons' => 0,    // Non-default.
+                'progressBarIcons' => 0, // Non-default.
                 'showpercentage' => defaults::SHOWPERCENTAGE,
                 'progressTitle' => "",
                 'activitiesincluded' => defaults::ACTIVITIESINCLUDED,
@@ -148,7 +159,7 @@ final class overview_test extends \advanced_testcase {
         ];
         $blockinstance = $this->getDataGenerator()->create_block('completion_progress', $blockinfo);
 
-        $assign = $this->create_assign_instance([
+        $this->create_assign_instance([
           'submissiondrafts' => 0,
           'completionsubmit' => 1,
           'completion' => COMPLETION_TRACKING_AUTOMATIC,
@@ -160,16 +171,18 @@ final class overview_test extends \advanced_testcase {
         set_config('showinactive', 0, 'block_completion_progress');
         set_config('showlastincourse', 0, 'block_completion_progress');
         set_config('forceiconsinbar', 0, 'block_completion_progress');
-        $progress = (new completion_progress($this->course))->for_overview()->for_block_instance($blockinstance);
-        $table = new \block_completion_progress\table\overview($progress, [], 0, true);
-        $table->define_baseurl('/');
+        $table = new \block_completion_progress\table\overview('block_completion_progress-overview-' . $blockinstance->id);
+        $filterset = new \block_completion_progress\table\overview_filterset();
+        $filterset->add_filter(new integer_filter('courseid', filter::JOINTYPE_DEFAULT, [(int)$this->course->id]));
+        $filterset->add_filter(new integer_filter('blockinstanceid', filter::JOINTYPE_DEFAULT, [(int)$blockinstance->id]));
+        $table->set_filterset($filterset);
 
         ob_start();
         $table->out(30, false);
         $text = ob_get_clean();
 
-        $this->assertStringContainsString('<input id="user'.$this->students[0]->id.'" ', $text);
-        $this->assertStringNotContainsString('<input id="user'.$this->students[3]->id.'" ', $text);
+        $this->assertStringContainsString('<input id="user' . $this->students[0]->id . '" ', $text);
+        $this->assertStringNotContainsString('<input id="user' . $this->students[3]->id . '" ', $text);
         $this->assertStringNotContainsString('col-timeaccess', $text);
         $this->assertStringNotContainsString('barWithIcons', $text);
 
@@ -177,32 +190,37 @@ final class overview_test extends \advanced_testcase {
         set_config('showinactive', 1, 'block_completion_progress');
         set_config('showlastincourse', 1, 'block_completion_progress');
         set_config('forceiconsinbar', 1, 'block_completion_progress');
-        $progress = (new completion_progress($this->course))->for_overview()->for_block_instance($blockinstance);
-        $table = new \block_completion_progress\table\overview($progress, [], 0, true);
-        $table->define_baseurl('/');
+        $table = new \block_completion_progress\table\overview('block_completion_progress-overview-' . $blockinstance->id);
+        $filterset = new \block_completion_progress\table\overview_filterset();
+        $filterset->add_filter(new integer_filter('courseid', filter::JOINTYPE_DEFAULT, [(int)$this->course->id]));
+        $filterset->add_filter(new integer_filter('blockinstanceid', filter::JOINTYPE_DEFAULT, [(int)$blockinstance->id]));
+        $table->set_filterset($filterset);
 
         ob_start();
         $table->out(30, false);
         $text = ob_get_clean();
 
-        $this->assertStringContainsString('<input id="user'.$this->students[0]->id.'" ', $text);
-        $this->assertStringContainsString('<input id="user'.$this->students[3]->id.'" ', $text);
+        $this->assertStringContainsString('<input id="user' . $this->students[0]->id . '" ', $text);
+        $this->assertStringContainsString('<input id="user' . $this->students[3]->id . '" ', $text);
         $this->assertStringContainsString('col-timeaccess', $text);
         $this->assertStringContainsString('barWithIcons', $text);
 
         // Test that group filtering works.
-        $progress = (new completion_progress($this->course))->for_overview()->for_block_instance($blockinstance);
-        $table = new \block_completion_progress\table\overview($progress, [$this->groups[0]->id], 0, true);
-        $table->define_baseurl('/');
+        $table = new \block_completion_progress\table\overview('block_completion_progress-overview-' . $blockinstance->id);
+        $filterset = new \block_completion_progress\table\overview_filterset();
+        $filterset->add_filter(new integer_filter('courseid', filter::JOINTYPE_DEFAULT, [(int)$this->course->id]));
+        $filterset->add_filter(new integer_filter('blockinstanceid', filter::JOINTYPE_DEFAULT, [(int)$blockinstance->id]));
+        $filterset->add_filter(new integer_filter('groups', filter::JOINTYPE_DEFAULT, [(int)$this->groups[0]->id]));
+        $table->set_filterset($filterset);
 
         ob_start();
         $table->out(30, false);
         $text = ob_get_clean();
 
-        $this->assertStringContainsString('<input id="user'.$this->students[0]->id.'" ', $text);
-        $this->assertStringNotContainsString('<input id="user'.$this->students[1]->id.'" ', $text);
-        $this->assertStringContainsString('<input id="user'.$this->students[2]->id.'" ', $text);
-        $this->assertStringNotContainsString('<input id="user'.$this->students[3]->id.'" ', $text);
+        $this->assertStringContainsString('<input id="user' . $this->students[0]->id . '" ', $text);
+        $this->assertStringNotContainsString('<input id="user' . $this->students[1]->id . '" ', $text);
+        $this->assertStringContainsString('<input id="user' . $this->students[2]->id . '" ', $text);
+        $this->assertStringNotContainsString('<input id="user' . $this->students[3]->id . '" ', $text);
     }
 
     /**
@@ -210,10 +228,9 @@ final class overview_test extends \advanced_testcase {
      * @covers \block_completion_progress\table\overview
      */
     public function test_overview_percentage_sort(): void {
-        global $DB, $PAGE;
+        global $PAGE;
 
         $PAGE->set_url('/');
-        $output = $PAGE->get_renderer('block_completion_progress');
         $generator = $this->getDataGenerator();
 
         // Add a block.
@@ -229,7 +246,7 @@ final class overview_test extends \advanced_testcase {
             'configdata' => base64_encode(serialize((object)[
                 'orderby' => defaults::ORDERBY,
                 'longbars' => defaults::LONGBARS,
-                'progressBarIcons' => 0,    // Non-default.
+                'progressBarIcons' => 0, // Non-default.
                 'showpercentage' => defaults::SHOWPERCENTAGE,
                 'progressTitle' => "",
                 'activitiesincluded' => defaults::ACTIVITIESINCLUDED,
@@ -257,19 +274,21 @@ final class overview_test extends \advanced_testcase {
         // Set student 0 as having completed one page.
         $completion->update_state($page1cm, COMPLETION_COMPLETE, $this->students[0]->id);
 
-        $progress = (new completion_progress($this->course))->for_overview()->for_block_instance($blockinstance);
-        $table = new \block_completion_progress\table\overview($progress, [], 0, true);
+        $table = new \block_completion_progress\table\overview('block_completion_progress-overview-' . $blockinstance->id);
+        $filterset = new \block_completion_progress\table\overview_filterset();
+        $filterset->add_filter(new integer_filter('courseid', filter::JOINTYPE_DEFAULT, [(int)$this->course->id]));
+        $filterset->add_filter(new integer_filter('blockinstanceid', filter::JOINTYPE_DEFAULT, [(int)$blockinstance->id]));
+        $table->set_filterset($filterset);
         $table->set_sortdata([['sortby' => 'progress', 'sortorder' => SORT_DESC]]);
-        $table->define_baseurl('/');
 
         ob_start();
         $table->out(5, false);
         $text = ob_get_clean();
 
         // Student 2 then Student 0 then Student 1.
-        $student0pos = strpos($text, '<input id="user'.$this->students[0]->id.'" ');
-        $student1pos = strpos($text, '<input id="user'.$this->students[1]->id.'" ');
-        $student2pos = strpos($text, '<input id="user'.$this->students[2]->id.'" ');
+        $student0pos = strpos($text, '<input id="user' . $this->students[0]->id . '" ');
+        $student1pos = strpos($text, '<input id="user' . $this->students[1]->id . '" ');
+        $student2pos = strpos($text, '<input id="user' . $this->students[2]->id . '" ');
         $this->assertGreaterThan($student2pos, $student0pos, 'Student 2 > Student 0');
         $this->assertGreaterThan($student0pos, $student1pos, 'Student 0 > Student 1');
     }

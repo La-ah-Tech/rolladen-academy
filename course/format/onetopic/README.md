@@ -1,6 +1,6 @@
 # COURSE FORMAT Onetopic
 
-Package tested in: moodle 4.4+ and 4.5+.
+Package tested in: moodle 5.0+.
 
 ## QUICK INSTALL
 Download zip package, extract the onetopic folder and upload this folder into course/format/.
@@ -16,10 +16,27 @@ Download zip package, extract the onetopic folder and upload this folder into co
 
 ## IN VERSION
 
+### 2025021903:
+* New feature: Subsection display mode.
+
+### 2025021902:
+* Compatibility with changes in 5.0
+
+### 2025021901:
+* Tool for migrating styles from old controls.
+
+### 2025021900:
+* Compatibility with moodle 5.0
+
+### 2024050906:
+* Option to remove icon in tab style editor.
+
 ### 2024050905:
 * New tab styles editor when editing each section.
+  * ![Tabs styles editor](https://boa.nuestroscursos.net/api/c/web/resources/NDU1MEVCNjAtODQ4Qy00RTk3LUI2NzUtOUJBN0E5ODk0QTkyQGJvYS51ZGVhLmVkdS5jbw==/!/onetopic/3.1.tab_settings.png)
 * Select icon by tab and tab state.
 * New background option by section.
+  * ![Tabs background color](https://boa.nuestroscursos.net/api/c/web/resources/NDU1MEVCNjAtODQ4Qy00RTk3LUI2NzUtOUJBN0E5ODk0QTkyQGJvYS51ZGVhLmVkdS5jbw==/!/onetopic/1.ejemplo_simple.png)
 * Compatibility with moodle 4.5
 * Do not show new subsections in tabs (Moodle 4.5). In the future these subsections become second-level tabs.
 
@@ -41,8 +58,6 @@ Download zip package, extract the onetopic folder and upload this folder into co
 * Support bulk edit tools.
 
 ### 2022081610:
-* New tabs view option: course index
-  * ![Tabs view Course index](https://boa.nuestroscursos.net/api/c/web/resources/NDU1MEVCNjAtODQ4Qy00RTk3LUI2NzUtOUJBN0E5ODk0QTkyQGJvYS51ZGVhLmVkdS5jbw==/!/onetopic/tabsview_courseindex.png)
 * New scope to show tabs: modules. Included admin setting to enable it. Funded by [Ecole hôtelière de Lausanne](https://www.ehl.edu/)
   * ![Scope modules](https://boa.nuestroscursos.net/api/c/web/resources/NDU1MEVCNjAtODQ4Qy00RTk3LUI2NzUtOUJBN0E5ODk0QTkyQGJvYS51ZGVhLmVkdS5jbw==/!/onetopic/tabs_scopemodules.png)
 

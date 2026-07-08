@@ -26,8 +26,38 @@ defined('MOODLE_INTERNAL') || die();
 
 $callbacks = [
     [
+        'hook' => \core\hook\after_config::class,
+        'callback' => 'theme_boost_union\local\hook\after_config::callback',
+        'priority' => 0,
+    ],
+    [
         'hook' => \core\hook\output\before_standard_head_html_generation::class,
         'callback' => 'theme_boost_union\local\hook\output\before_standard_head_html_generation::callback',
+        'priority' => 0,
+    ],
+    [
+        'hook' => \core\hook\output\before_standard_top_of_body_html_generation::class,
+        'callback' => 'theme_boost_union\local\hook\output\before_standard_top_of_body_html_generation::callback',
+        'priority' => 0,
+    ],
+    [
+        'hook' => \core_course\hook\after_form_definition::class,
+        'callback' => 'theme_boost_union\local\hook\course\after_form_definition::callback',
+        'priority' => 0,
+    ],
+    [
+        'hook' => \core_course\hook\after_form_definition_after_data::class,
+        'callback' => 'theme_boost_union\local\hook\course\after_form_definition_after_data::callback',
+        'priority' => 0,
+    ],
+    [
+        'hook' => \core_course\hook\after_form_submission::class,
+        'callback' => 'theme_boost_union\local\hook\course\after_form_submission::callback',
+        'priority' => 0,
+    ],
+    [
+        'hook' => \core_backup\hook\after_restore_root_define_settings::class,
+        'callback' => 'theme_boost_union\local\hook\backup\after_restore_root_define_settings::callback',
         'priority' => 0,
     ],
 ];

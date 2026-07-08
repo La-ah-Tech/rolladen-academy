@@ -149,6 +149,10 @@ function unilabel_cm_info_view(cm_info $cm) {
             $editlink->url       = new \moodle_url('/mod/unilabel/edit_content.php', ['cmid' => $cm->id]);
             $content['editlink'] = $editlink;
         }
+    } else {
+        // Set the completion state.
+        $completioninfo = new \mod_unilabel\completion_info($cm->get_course());
+        $completioninfo->set_module_viewed($cm);
     }
 
     $cm->set_content($renderer->render_from_template('mod_unilabel/content', $content), true);
@@ -187,8 +191,8 @@ function unilabel_get_extra_capabilities() {
  * @uses FEATURE_COMPLETION_TRACKS_VIEWS
  * @uses FEATURE_GRADE_HAS_GRADE
  * @uses FEATURE_GRADE_OUTCOMES
- * @param  string    $feature FEATURE_xx constant for requested feature
- * @return bool|null True if module supports feature, false if not, null if doesn't know
+ * @param  string $feature FEATURE_xx constant for requested feature
+ * @return mixed  True if module supports feature, false if not, null if doesn't know or string for the module purpose.
  */
 function unilabel_supports($feature) {
     switch ($feature) {
@@ -201,7 +205,7 @@ function unilabel_supports($feature) {
         case FEATURE_MOD_INTRO:
             return true;
         case FEATURE_COMPLETION_TRACKS_VIEWS:
-            return false;
+            return true;
         case FEATURE_GRADE_HAS_GRADE:
             return false;
         case FEATURE_GRADE_OUTCOMES:
@@ -333,7 +337,7 @@ function mod_unilabel_output_fragment_get_tinyconfig($args) {
         throw new \moodle_exception('Wrong contextlevel');
     }
 
-    list($course, $cm) = get_course_and_cm_from_cmid($context->instanceid, 'unilabel');
+    [$course, $cm] = get_course_and_cm_from_cmid($context->instanceid, 'unilabel');
     if (!$unilabel = $DB->get_record('unilabel', ['id' => $cm->instance])) {
         throw new \moodle_exception('Wrong instance "' . $cm->instance . '"');
     }
@@ -356,8 +360,29 @@ function mod_unilabel_output_fragment_get_tinyconfig($args) {
         if ($attributes['id'] == $targetid) {
             return $tinyhelper->get_options($editelementobj->editor_options(), $draftitemid);
         }
-
     }
 
     throw new \moodle_exception('Element not found');
+}
+
+/**
+ * Get a html fragment from a content type.
+ *
+ * @param  mixed  $args an array or object with context and parameters needed to get the data
+ * @return string The html fragment we want to use by ajax
+ */
+function mod_unilabel_output_fragment_get_type_content($args) {
+    if (!isset($args['type'])) {
+        throw new \moodle_exception('Missing param "type"');
+    }
+    // Get type and check it.
+    $type = $args['type'];
+    $classname = '\\unilabeltype_' . $type . '\\content_type';
+    if (!class_exists($classname)) {
+        throw new \moodle_exception('Wrong element type "' . $classname . '"');
+    }
+
+    /** @var \mod_unilabel\content_type $typeobj */
+    $typeobj = new $classname();
+    return $typeobj->get_fragment($args);
 }

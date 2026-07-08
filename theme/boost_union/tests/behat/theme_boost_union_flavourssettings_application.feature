@@ -34,6 +34,9 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
       | user     | cohort |
       | teacher1 | CH1    |
 
+  # Note: This feature file could be realized without Javascript and with Behat generators instead as well to save some testing time.
+  # However, it is realized with Javascript here to test the UI processes as well.
+
   Scenario: Flavours: Application - Flavour ID is added as body class attribute
     When I log in as "admin"
     And I navigate to "Appearance > Boost Union > Flavours" in site administration
@@ -55,7 +58,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I set the field "Title" to "Cat 1 flavour"
     # We add a small CSS snippet to the flavour which hides the heading in the page header on course pages and category overview pages.
     # This is just to make it easy to detect if this flavour is applied or not.
-    And I set the field "Custom CSS" to multiline:
+    And I set the field "Raw SCSS" to multiline:
     """
     .path-course-view #page-header h1, .path-course-index #page-header h1 { display: none; }
     """
@@ -65,7 +68,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I press the escape key
     And I set the field "Include subcategories" to "0"
     And I click on "Save changes" "button"
-    And I should see "Flavours" in the "#region-main h2" "css_element"
+    And I should see "Flavours" in the ".admin_settingspage_tabs_with_tertiary .dropdown-toggle" "css_element"
     And I should see "Course categories" in the "Cat 1 flavour" "table_row"
     And I log out
     And I log in as "teacher1"
@@ -94,7 +97,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I set the field "Title" to "Cat 1 flavour"
     # We add a small CSS snippet to the flavour which hides the heading in the page header on course pages and category overview pages.
     # This is just to make it easy to detect if this flavour is applied or not.
-    And I set the field "Custom CSS" to multiline:
+    And I set the field "Raw SCSS" to multiline:
     """
     .path-course-view #page-header h1, .path-course-index #page-header h1 { display: none; }
     """
@@ -104,7 +107,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I press the escape key
     And I set the field "Include subcategories" to "1"
     And I click on "Save changes" "button"
-    And I should see "Flavours" in the "#region-main h2" "css_element"
+    And I should see "Flavours" in the ".admin_settingspage_tabs_with_tertiary .dropdown-toggle" "css_element"
     And I should see "Course categories" in the "Cat 1 flavour" "table_row"
     And I log out
     And I log in as "teacher1"
@@ -133,7 +136,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I set the field "Title" to "Cat 1 flavour"
     # We add a small CSS snippet to the flavour which hides the heading in the page header on course pages and category overview pages.
     # This is just to make it easy to detect if this flavour is applied or not.
-    And I set the field "Custom CSS" to multiline:
+    And I set the field "Raw SCSS" to multiline:
     """
     .path-course-view #page-header h1, .path-course-index #page-header h1 { display: none; }
     """
@@ -143,13 +146,13 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I press the escape key
     And I set the field "Include subcategories" to "0"
     And I click on "Save changes" "button"
-    And I should see "Flavours" in the "#region-main h2" "css_element"
+    And I should see "Flavours" in the ".admin_settingspage_tabs_with_tertiary .dropdown-toggle" "css_element"
     And I should see "Course categories" in the "Cat 1 flavour" "table_row"
     And I click on ".action-edit" "css_element" in the "Cat 1 flavour" "table_row"
     And I expand all fieldsets
     And I select "No" from the "Apply to course categories" singleselect
     And I click on "Save changes" "button"
-    And I should see "Flavours" in the "#region-main h2" "css_element"
+    And I should see "Flavours" in the ".admin_settingspage_tabs_with_tertiary .dropdown-toggle" "css_element"
     And I should not see "Course categories" in the "Cat 1 flavour" "table_row"
     And I log out
     And I log in as "teacher1"
@@ -169,7 +172,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I set the field "Title" to "Cohort 1 flavour"
     # We add a small CSS snippet to the flavour which hides the heading in the page header on the dashboard.
     # This is just to make it easy to detect if this flavour is applied or not.
-    And I set the field "Custom CSS" to multiline:
+    And I set the field "Raw SCSS" to multiline:
     """
     .path-my #page-header h1 { display: none; }
     """
@@ -178,7 +181,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I click on "Cohort 1" item in the autocomplete list
     And I press the escape key
     And I click on "Save changes" "button"
-    And I should see "Flavours" in the "#region-main h2" "css_element"
+    And I should see "Flavours" in the ".admin_settingspage_tabs_with_tertiary .dropdown-toggle" "css_element"
     And I should see "Cohorts" in the "Cohort 1 flavour" "table_row"
     And I log out
     And I log in as "teacher1"
@@ -199,7 +202,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I set the field "Title" to "Cohort 1 flavour"
     # We add a small CSS snippet to the flavour which hides the heading in the page header on the dashboard.
     # This is just to make it easy to detect if this flavour is applied or not.
-    And I set the field "Custom CSS" to multiline:
+    And I set the field "Raw SCSS" to multiline:
     """
     .path-my #page-header h1 { display: none; }
     """
@@ -208,13 +211,13 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I click on "Cohort 1" item in the autocomplete list
     And I press the escape key
     And I click on "Save changes" "button"
-    And I should see "Flavours" in the "#region-main h2" "css_element"
+    And I should see "Flavours" in the ".admin_settingspage_tabs_with_tertiary .dropdown-toggle" "css_element"
     And I should see "Cohorts" in the "Cohort 1 flavour" "table_row"
     And I click on ".action-edit" "css_element" in the "Cohort 1 flavour" "table_row"
     And I expand all fieldsets
     And I select "No" from the "Apply to cohorts" singleselect
     And I click on "Save changes" "button"
-    And I should see "Flavours" in the "#region-main h2" "css_element"
+    And I should see "Flavours" in the ".admin_settingspage_tabs_with_tertiary .dropdown-toggle" "css_element"
     And I should not see "Cohorts" in the "Cohort 1 flavour" "table_row"
     And I log out
     And I log in as "teacher1"
@@ -231,7 +234,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I set the field "Title" to "Cat 1a flavour"
     # We add a small CSS snippet to the flavour which colorizes the heading in the page header on the dashboard.
     # This is just to make it easy to detect if this flavour is applied or not.
-    And I set the field "Custom CSS" to multiline:
+    And I set the field "Raw SCSS" to multiline:
     """
     .path-course-view #page-header h1, .path-course-index #page-header h1 { color: red; }
     """
@@ -241,7 +244,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I press the escape key
     And I set the field "Include subcategories" to "0"
     And I click on "Save changes" "button"
-    And I should see "Flavours" in the "#region-main h2" "css_element"
+    And I should see "Flavours" in the ".admin_settingspage_tabs_with_tertiary .dropdown-toggle" "css_element"
     And I should see "Course categories" in the "Cat 1a flavour" "table_row"
     And I click on "Create flavour" "button"
     And I should see "Create flavour" in the "#page-header h1" "css_element"
@@ -249,7 +252,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I set the field "Title" to "Cat 1b flavour"
     # We add a small CSS snippet to the flavour which hides the heading in the page header on the dashboard.
     # This is just to make it easy to detect if this flavour is applied or not.
-    And I set the field "Custom CSS" to multiline:
+    And I set the field "Raw SCSS" to multiline:
     """
     .path-course-view #page-header h1, .path-course-index #page-header h1 { display: none; }
     """
@@ -259,7 +262,7 @@ Feature: Configuring the theme_boost_union plugin on the "Flavours" page, applyi
     And I press the escape key
     And I set the field "Include subcategories" to "0"
     And I click on "Save changes" "button"
-    And I should see "Flavours" in the "#region-main h2" "css_element"
+    And I should see "Flavours" in the ".admin_settingspage_tabs_with_tertiary .dropdown-toggle" "css_element"
     And I should see "Course categories" in the "Cat 1b flavour" "table_row"
     And I log out
     And I log in as "teacher1"

@@ -40,9 +40,8 @@ use stdClass;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class sectionnavigation extends sectionnavigation_base {
-
     /** @var stdClass the calculated data to prevent calculations when rendered several times */
-    private $data = null;
+    protected $data = null;
 
     /**
      * Export this data so it can be used as the context for a mustache template.

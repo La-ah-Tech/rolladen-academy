@@ -14,27 +14,76 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Gallery page class.
+ *
+ * @package    mod_lightboxgallery
+ * @copyright  Copyright (c) 2021 Open LMS (https://www.openlms.net)
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace mod_lightboxgallery;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once(dirname(__FILE__).'/../imageclass.php');
+require_once(dirname(__FILE__) . '/../imageclass.php');
 
+/**
+ * This class is used to display a page of images in the gallery.
+ */
 class gallery_page {
-
+    /**
+     * Sort by filename.
+     */
     const SORTBY_FILENAME = 0;
+    /**
+     * Sort by caption.
+     */
     const SORTBY_CAPTION = 1;
+    /**
+     * Sort by filename natural.
+     */
     const SORTBY_FILENAME_NATURAL = 2;
 
+    /**
+     * @var cm_info Course module information.
+     */
     private $cm;
+    /**
+     * @var bool Whether the user is editing or not.
+     */
     private $editing;
+    /**
+     * @var \stored_file[] The files in the gallery.
+     */
     private $files;
+    /**
+     * @var stdClass The gallery object.
+     */
     private $gallery;
+    /**
+     * @var int The number of images on this page.
+     */
     private $imagecount;
+    /**
+     * @var array The metadata for the images.
+     */
     private $metadata = [];
+    /**
+     * @var int The page number.
+     */
     private $page = 0;
+    /**
+     * @var array The files on this page.
+     */
     private $pagefiles = [];
+    /**
+     * @var array The thumbnails for the images.
+     */
     private $pagethumbs = [];
+    /**
+     * @var \stored_file[] The thumbnails in the gallery.
+     */
     private $thumbnails;
 
     /**
@@ -57,16 +106,34 @@ class gallery_page {
         $this->load_metadata();
     }
 
+    /**
+     * Display the images on this page.
+     *
+     * @return string
+     */
     public function display_images() {
         $html = '';
         foreach ($this->pagefiles as $filename => $file) {
-            $image = new \lightboxgallery_image($file, $this->gallery, $this->cm,
-                $this->metadata[$filename], $this->pagethumbs[$filename], $this->gallery->extinfo);
+            $image = new \lightboxgallery_image(
+                $file,
+                $this->gallery,
+                $this->cm,
+                $this->metadata[$filename],
+                $this->pagethumbs[$filename],
+                $this->gallery->extinfo
+            );
             $html .= $image->get_image_display_html($this->editing);
         }
         return $html;
     }
 
+    /**
+     * Load the metadata for the images.
+     *
+     * @return void
+     * @throws \coding_exception
+     * @throws \dml_exception
+     */
     protected function load_metadata() {
         global $DB;
 
@@ -93,7 +160,7 @@ class gallery_page {
             return;
         }
 
-        list ($insql, $params) = $DB->get_in_or_equal($filenames, SQL_PARAMS_NAMED);
+        [$insql, $params] = $DB->get_in_or_equal($filenames, SQL_PARAMS_NAMED);
         $params['gallery'] = $this->gallery->id;
         $select = "gallery = :gallery AND image $insql";
         $metadata = $DB->get_records_select('lightboxgallery_image_meta', $select, $params);
@@ -143,6 +210,11 @@ class gallery_page {
         }
     }
 
+    /**
+     * Get the number of images on this page.
+     *
+     * @return mixed
+     */
     public function image_count() {
         return $this->imagecount;
     }
