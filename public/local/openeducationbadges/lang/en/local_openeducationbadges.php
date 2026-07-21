@@ -1,0 +1,95 @@
+<?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle. If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * English locale for local_openeducationbadges.
+ *
+ * @package    local_openeducationbadges
+ * @copyright  2024 Esirion AG
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
+$string['active'] = 'active';
+$string['activeissuers'] = 'Active issuers';
+$string['activitycompletion'] = 'at activity completion:';
+$string['addnew'] = 'Add new';
+$string['addnewoauth2'] = 'Add new OAuth2 API connection';
+$string['all'] = 'All';
+$string['award'] = 'award';
+$string['badgelist'] = 'List of badges';
+$string['badgelisttitle'] = 'All badges';
+$string['badgesplatform'] = 'Open Education Badges earned';
+$string['client'] = 'Client';
+$string['clientadd'] = 'Add client';
+$string['clientdeleted'] = 'Client deleted';
+$string['clientid'] = 'Client ID';
+$string['clientidexists'] = 'Client ID exists already';
+$string['clientname'] = 'Client name';
+$string['clients'] = 'Clients';
+$string['clientsaved'] = 'Client saved';
+$string['clientsecret'] = 'Client secret';
+$string['connectionproblemgeneral'] = 'There is a problem with your connections to Open Education Badges. Please verify your plugin credentials, the availability of the OEB Server or the like.';
+$string['connectionsevered'] = 'This connection to Open Education Badges was severed. Please verify your plugin credentials, the availability of the OEB Server or the like and save the connection again.';
+$string['coursecompletion'] = 'at course completion';
+$string['deleteclientconfirm'] = 'Are you sure you want to delete this client?';
+$string['editissuers'] = 'Edit issuers';
+$string['infoconnectapi'] = 'Add API authentication method.';
+$string['invalidclientsecret'] = 'The client ID or secret is invalid';
+$string['issuebadgefailed'] = 'Badge issuing failed';
+$string['issuers'] = 'Issuers';
+$string['issuerscustomize'] = 'Customize issuers';
+$string['issuerssaved'] = 'Issuers customized';
+$string['nobadges'] = 'No badge';
+$string['nobadgesearned'] = 'No badges earned yet';
+$string['oauth2problem'] = 'There is a problem. Please verify your plugin credentials.';
+$string['oeb'] = 'Open Education Badges';
+$string['openeducationbadges:configure'] = ' Configure OEB Settings';
+$string['pluginname'] = 'Open Education Badges';
+$string['profilebadgelist'] = 'Open Education Badges';
+$string['saveawarding'] = 'Save awarding';
+$string['selectaward'] = 'Select awarding method:';
+$string['selectcompletion'] = 'Select completion method:';
+$string['settings'] = 'Settings';
+$string['settingssaved'] = 'Settings saved';
+$string['status'] = 'Status';
+
+$string['clientid_help'] = 'Client ID of your openbadges.education account.';
+$string['clientsecret_help'] = 'Log in to your openbadges.education account and go to "App Integration". There you can find the client secret.';
+
+$string['connectionproblembody'] = 'The connection {$a->name} to Open Education Badges has a problem. Please verify your plugin credentials, the availability of the OEB Server or the like and save the connection again.';
+$string['connectionproblemsubject'] = 'The connection {$a->name} has a problem.';
+
+$string['event:apirequest_answered'] = 'OEB API response';
+$string['event:apirequest_answered:info'] = 'Response: {$a->info}';
+$string['event:apirequest_called'] = 'OEB API request';
+$string['event:apirequest_called:info'] = 'Request: {$a->info}';
+$string['event:apirequest_failed'] = 'OEB API error';
+$string['event:apirequest_failed:info'] = 'API Error: {$a->info}';
+
+$string['messageprovider:connectionproblem'] = 'A connection problem has occured.';
+
+$string['privacy:metadata:badge_queue'] = 'Information about pending badges to be issued.';
+$string['privacy:metadata:badge_queue:badgeid'] = 'The ID of the badge to be issued.';
+$string['privacy:metadata:badge_queue:id'] = 'The ID of the record in the database.';
+$string['privacy:metadata:badge_queue:user_id'] = 'The ID of the user the badge should be issued to.';
+$string['privacy:metadata:oeb_client'] = 'In order to integrate with the remote openbadges.education service, user data needs to be exchanged with that service.';
+$string['privacy:metadata:oeb_client:datarights'] = 'Your data protection rights and how to exercise them: <a href="https://openbadges.education/page/data-privacy" target="_blank">https://openbadges.education/page/data-privacy</a>';
+$string['privacy:metadata:oeb_client:useremail'] = 'The user email is sent from Moodle to allow issuing badges to you and to allow you to access your badges on the remote system.';
+
+$string['task:issue_badge'] = 'Try issuing badge in queue';
+$string['task:issue_badges'] = 'Try issuing badges in queue';

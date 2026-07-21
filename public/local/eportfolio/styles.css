@@ -1,0 +1,45 @@
+#page .page-context-header .page-header-headings {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#page-local-eportfolio-create .page-context-header .header-button-group,
+#page-local-eportfolio-edit .page-context-header .header-button-group,
+#page-local-eportfolio-upload .page-context-header .header-button-group,
+#page-local-eportfolio-view .page-context-header .header-button-group,
+#page-local-eportfolio-index .page-context-header .header-button-group {
+    display: inline-flex;
+    float: left;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 1.5rem;
+}
+
+.path-local-eportfolio .divider {
+    height: 0;
+    margin: 1rem 0;
+    overflow: hidden;
+    border-top: 2px solid #ced4da;
+}
+
+.path-local-eportfolio .icon-round {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.path-local-eportfolio .icon-round-primary {
+    background-color: var(--bs-primary);
+}
+
+.path-local-eportfolio .icon-round-secondary {
+    color: #000;
+    background-color: var(--bs-secondary);
+}
