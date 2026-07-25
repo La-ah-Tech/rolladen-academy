@@ -61,3 +61,12 @@ jsconfig.json
 UPGRADING-CURRENT.md
 .phpunit.cache
 tsconfig.aliases.json
+
+# Local ops / rehearsal files — never deploy or track (kept out of prod checkouts)
+/UPGRADE_5.2.md
+/LOCAL_DOCKER.md
+/config.php.prod-backup
+/server-backup-inputs.sh
+/fix-mnetservice-tables.sql
+/prod-update.sh
+.claude/
